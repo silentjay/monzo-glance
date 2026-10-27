@@ -276,7 +276,7 @@ Item {
       Text {
         id: checkedText
         anchors.left: parent.left
-        anchors.baseline: openText.baseline
+        anchors.verticalCenter: openLink.verticalCenter
         textFormat: Text.PlainText
         text: ac.doc ? (ac.doc.checked_text || "") : ""
         color: ac.muted
