@@ -36,9 +36,12 @@ settled. Switch with the two labels at the top of the card; hover always opens o
 
 ![Monzo Glance's Account page: balance, spent today, pots, and the last seven days of transactions](docs/monzo-glance-card-account.png)
 
-The colours: **green** under or on your usual pace, **amber** over it (never red), **neutral** on
-days 1–3 and while there is no complete month to compare with, **greyed** when the data is over 3
-hours old, and a **broken-link glyph** when there is nothing trustworthy to show.
+The **£ itself** carries the colour: **green** under or on your usual pace, **amber** over it
+(never red), and the bar's own colour on days 1–3 or while there is no complete month to compare
+with. It is greyed when the data is over 3 hours old, and replaced by a **broken-link glyph** when
+there is nothing trustworthy to show. Set `faceTint` off to keep it in the bar's colour always.
+
+![The five faces: green under pace, amber over, neutral, greyed, and the broken-link glyph](docs/monzo-glance-faces.png)
 
 ## What you need
 

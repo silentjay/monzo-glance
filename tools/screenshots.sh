@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # The README's screenshots, rendered from the INVENTED household (tools/demo.py): no real
-# account, merchant or amount is ever on screen. Needs the widget on a top bar of a running
-# Omarchy shell, plus grim, jq and ImageMagick.
+# account, merchant or amount is ever on screen, and the card is captured on its own so no
+# desktop or other bar widgets leak in. Needs the widget on a top bar of a running Omarchy
+# shell, plus grim, jq and ImageMagick.
 #
 #   tools/screenshots.sh [OUT_DIR]        default: docs/
 #
@@ -29,16 +30,6 @@ scene() {       # scene NAME: paint it and wait for the widget to take it
   sleep 0.5
 }
 
-card() {        # card FILE: the open card with the stretch of bar above it
-  ipc hovercard open
-  sleep 1.2
-  local x y w h
-  x=$(st .face_x); y=$(st .face_y); w=$(st .card_width); h=$(st .card_height)
-  grim -g "$((x - w / 2 - 24)),0 $((w + 48))x$((2 * y + 5 + h + 24))" "$OUT/$1"
-  ipc hovercard close
-  sleep 0.4
-}
-
 accountcard() { # accountcard FILE: just the Account card, with no desktop around it
   ipc hovercardview account
   sleep 1.2
@@ -56,13 +47,11 @@ face() {        # face FILE: the pound sign alone, as it sits on the bar
 }
 
 TMP="$(mktemp -d)"
-scene under;      card monzo-glance-card.png;            accountcard monzo-glance-card-account.png; OUT="$TMP" face good.png
-x=$(st .face_x); y=$(st .face_y)
-grim -g "$((x - 190)),0 380x$((2 * y))" "$OUT/monzo-glance-bar.png"
-scene over;       card monzo-glance-card-over.png;       OUT="$TMP" face over.png
-scene grace;      card monzo-glance-card-grace.png;      OUT="$TMP" face plain.png
-scene stale;      card monzo-glance-card-stale.png;      OUT="$TMP" face stale.png
-scene signed-out; card monzo-glance-card-signed-out.png; OUT="$TMP" face broken.png
+scene under;      accountcard monzo-glance-card-account.png; OUT="$TMP" face good.png
+scene over;       OUT="$TMP" face over.png
+scene grace;      OUT="$TMP" face plain.png
+scene stale;      OUT="$TMP" face stale.png
+scene signed-out; OUT="$TMP" face broken.png
 
 # the five faces side by side, each named, in the bar's own font when fontconfig can find it
 FONT="$(fc-match -f '%{file}' monospace 2>/dev/null || true)"
