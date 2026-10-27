@@ -32,6 +32,8 @@ itself: balance, spent today, the balance with pots, every pot, and the **last s
 transactions by day — merchant emoji, time, name, amount, and `pending` on anything not
 settled. Switch with the two labels at the top of the card; hover always opens on Month.
 
+![Moth's Account page: balance, spent today, pots, and the last seven days of transactions](docs/moth-card-account.png)
+
 The colours: **green** under or on your usual pace, **amber** over it (never red), **neutral** on
 days 1–3 and while there is no complete month to compare with, **greyed** when the data is over 3
 hours old, and a **broken-link glyph** when there is nothing trustworthy to show.

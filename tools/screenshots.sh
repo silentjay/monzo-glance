@@ -39,6 +39,16 @@ card() {        # card FILE: the open card with the stretch of bar above it
   sleep 0.4
 }
 
+accountcard() { # accountcard FILE: just the Account card, with no desktop around it
+  ipc hovercardview account
+  sleep 1.2
+  local x y w h
+  x=$(st .face_x); y=$(st .face_y); w=$(st .card_width); h=$(st .card_height)
+  grim -g "$((x - w / 2)),$((2 * y + 5)) ${w}x${h}" "$OUT/$1"
+  ipc hovercard close
+  sleep 0.4
+}
+
 face() {        # face FILE: the butterfly alone, as it sits on the bar
   local x y
   x=$(st .face_x); y=$(st .face_y)
@@ -46,7 +56,7 @@ face() {        # face FILE: the butterfly alone, as it sits on the bar
 }
 
 TMP="$(mktemp -d)"
-scene under;      card moth-card.png;            OUT="$TMP" face good.png
+scene under;      card moth-card.png;            accountcard moth-card-account.png; OUT="$TMP" face good.png
 x=$(st .face_x); y=$(st .face_y)
 grim -g "$((x - 190)),0 380x$((2 * y))" "$OUT/moth-bar.png"
 scene over;       card moth-card-over.png;       OUT="$TMP" face over.png

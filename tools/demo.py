@@ -41,6 +41,9 @@ MERCHANTS = {"c-groc": "Waitrose & Partners", "c-rest": "Sushi Bar", "c-fun": "C
              "c-shop": "Uniqlo", "c-gas": "Co Wheels", "c-med": "EasyJet", "c-kid": "Cashpoint",
              "c-fin": "HMRC", "c-elec": "Octopus Energy", "c-odd": "Corner Shop",
              "c-pay": "Example Payroll", "c-ccp": "Maple Card Payment", "c-xfer": "To Savings"}
+EMOJI = {"c-groc": "🛒", "c-rest": "🍽️", "c-fun": "🎬", "c-shop": "🛍️", "c-gas": "🚆",
+         "c-med": "✈️", "c-kid": "💵", "c-fin": "💼", "c-elec": "🧾", "c-odd": "💳",
+         "c-pay": "💷", "c-ccp": "🔁", "c-xfer": "🔁"}
 
 
 def decorate(snap):
@@ -59,6 +62,7 @@ def decorate(snap):
     for i, t in enumerate(snap["transactions"]):
         t.setdefault("at", "%sT%02d:%02d:00+00:00" % (t["date"], 8 + (i * 3) % 12, (i * 17) % 60))
         t.setdefault("name", MERCHANTS.get(t["category_id"], "Card purchase"))
+        t.setdefault("emoji", EMOJI.get(t["category_id"], "💳"))
     return snap
 
 
@@ -100,6 +104,7 @@ def self_check():
     rows = [r for d in acc["days"] for r in d["rows"]]
     assert rows and all("\u00a3" in r["amount_text"] for r in rows), "every account row is in pounds"
     assert all(r["name"] != "Transaction" for r in rows), "the demo names its merchants"
+    assert all(r["emoji"] for r in rows), "the demo gives every row an emoji"
     print("demo self-check: OK")
 
 
