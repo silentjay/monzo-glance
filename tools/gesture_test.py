@@ -1,26 +1,26 @@
 #!/usr/bin/env python3
-"""The hover gesture test for the Moth bar widget, run with a virtual pointer (vpointer.py).
+"""The hover gesture test for the Monzo Glance bar widget, run with a virtual pointer (vpointer.py).
 
-    gesture_test.py [--click] [--target io.github.silentjay.moth] [--x X --y Y]
+    gesture_test.py [--click] [--target io.github.silentjay.monzoglance] [--x X --y Y]
                     [--other-x X] [--other-target PLUGIN_ID]
 
 It MOVES THE REAL CURSOR for about twenty seconds; keep hands off the pointer. The cursor is put
 back where it was. `--click` also runs the two click gestures, which open (or focus) Monzo.
 
-The widget says where its butterfly sits (`omarchy-shell io.github.silentjay.moth status`: face_x, face_y),
+The widget says where its pound sign sits (`omarchy-shell io.github.silentjay.monzoglance status`: face_x, face_y),
 so no coordinates are needed on a top bar; --x/--y override them. It works on any data: your
 own, or the invented household (see tools/demo.py):
-    omarchy-shell io.github.silentjay.moth fixture "python3 <this checkout>/tools/demo.py under"
+    omarchy-shell io.github.silentjay.monzoglance fixture "python3 <this checkout>/tools/demo.py under"
 
 Gestures, each judged from the widget's own IPC status sampled about eight times a second:
-  1 rest on the butterfly        closed -> opening -> open, open within ~0.6 s
+  1 rest on the pound sign        closed -> opening -> open, open within ~0.6 s
   2 move down into the card      stays open across the gap and inside the card
   3 leave the card               closing -> closed within ~0.8 s
   4 fast sweep across            never opens
   5 move to another widget       this card closes (--other-x, default a little to the left; with
                                  --other-target, a hover-card plugin there, that card must open)
   6 click "Open Monzo"         [--click] the card closes and a Monzo window exists
-  7 click the butterfly          [--click] Monzo is focused (or opened); no second window
+  7 click the pound sign          [--click] Monzo is focused (or opened); no second window
 
 Gestures 6 and 7 count a window whose class or title names Monzo: the web app
 (install-webapp.sh) or, without it, the browser tab that the fallback opens.
@@ -40,7 +40,7 @@ def arg(name, default):
     return type(default)(sys.argv[sys.argv.index(name) + 1]) if name in sys.argv else default
 
 
-TARGET = arg("--target", "io.github.silentjay.moth")
+TARGET = arg("--target", "io.github.silentjay.monzoglance")
 OTHER_TARGET = arg("--other-target", "")
 
 
@@ -116,7 +116,7 @@ def main():
         print("the widget did not say where it is (face_x/face_y); pass --x and --y")
         return 2
     OTHER_X = arg("--other-x", X - 60)
-    bar_h = 2 * Y                       # the butterfly sits on the bar's centre line
+    bar_h = 2 * Y                       # the pound sign sits on the bar's centre line
     pos = hypr("cursorpos").strip().split(",")
     mons = json.loads(hypr("monitors", "-j"))
     mon = next((m for m in mons if m.get("focused")), mons[0])
@@ -138,7 +138,7 @@ def main():
     t_open = p.first("open")
     t_opening = p.first("opening")
     ok = p.states()[:3] in (["closed", "opening", "open"],) and t_open is not None and t_opening is not None and (t_open - t_opening) < 0.6
-    report(1, "rest on the butterfly", ok, "%s; opening->open %.2fs" % (p.states(), (t_open - t_opening) if ok else -1))
+    report(1, "rest on the pound sign", ok, "%s; opening->open %.2fs" % (p.states(), (t_open - t_opening) if ok else -1))
     card_h = status().get("card_height") or 400
 
     # 2 into the card across the gap
@@ -207,7 +207,7 @@ def main():
         ok = on_button and len(wins) >= 1 and p.rows[-1][2] is False and (before >= 1 or len(wins) == before + 1)
         report(6, "click Open Monzo", ok, "pointer on the button: %s; windows before %d, after %d; card open at the end: %s; active: %s" % (
             on_button, before, len(wins), p.rows[-1][2], active()))
-        # 7 the butterfly itself: focus something else first, then click
+        # 7 the pound sign itself: focus something else first, then click
         subprocess.run(["hyprctl", "dispatch", "hl.dsp.focus({ window = \"class:^(foot|com.mitchellh.ghostty|Alacritty|kitty)$\" })"], capture_output=True)
         time.sleep(0.5)
         was = active()
@@ -215,7 +215,7 @@ def main():
         wait_for(lambda: "actual" in active().lower())
         wins2 = actual_windows()
         ok = len(wins2) == max(1, len(wins)) and "actual" in active().lower()
-        report(7, "click the butterfly", ok, "active before %r, after %r; windows %d (no second one)" % (was, active(), len(wins2)))
+        report(7, "click the pound sign", ok, "active before %r, after %r; windows %d (no second one)" % (was, active(), len(wins2)))
 
     vp("move:%d,%d" % home)
     print("%d/%d gestures passed" % (sum(results), len(results)))

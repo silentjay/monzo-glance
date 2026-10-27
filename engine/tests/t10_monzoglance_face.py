@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # T10: the bar tick end to end — face states, the fetch gates, the files, the silence.
 #
-#   t10_moth_face.py <engine dir> [<launcher>]
+#   t10_monzoglance_face.py <engine dir> [<launcher>]
 #
 # The real cli.tick() runs with its cache and state under a temp XDG dir, a pinned clock, and two
 # seams replaced on the modules: adapter.fetch_snapshot (no network) and secret.load (no keyring).
@@ -12,7 +12,7 @@
 #   face states   live (good/over), plain, stale, broken (no session; refused session; no data;
 #                 data too old; unreadable keyring; corrupt cache), and EMPTY OUTPUT: a crash
 #                 inside the tick prints nothing at all, and so does a launcher without its venv
-#   never plausible  the butterfly is on stdout only for live and stale; every broken path carries
+#   never plausible  the pound sign is on stdout only for live and stale; every broken path carries
 #                 the broken glyph or nothing
 #   fetch gates   at most hourly; a failure retried after 10 min, a refused session after 6 h;
 #                 --refresh fetches now but not twice within 60 s; a held lock means no fetch
@@ -50,7 +50,7 @@ def mode(path):
 
 def check(engine_dir, launcher):
     sys.path.insert(0, HERE)
-    import t9_moth_model as t9
+    import t9_monzoglance_model as t9
     sys.path.insert(0, engine_dir)
     fails = []
 
@@ -62,17 +62,17 @@ def check(engine_dir, launcher):
         """A fresh engine with empty dirs; fetch and keyring seams counted and steerable."""
 
         def __init__(self):
-            self.tmp = tempfile.mkdtemp(prefix="t10-moth-")
+            self.tmp = tempfile.mkdtemp(prefix="t10-monzo-glance-")
             os.environ["XDG_CACHE_HOME"] = os.path.join(self.tmp, "cache")
             os.environ["XDG_STATE_HOME"] = os.path.join(self.tmp, "state")
             os.environ["XDG_CONFIG_HOME"] = os.path.join(self.tmp, "config")
-            for name in [n for n in sys.modules if n == "mothnow" or n.startswith("mothnow.")]:
+            for name in [n for n in sys.modules if n == "monzoglance" or n.startswith("monzoglance.")]:
                 del sys.modules[name]
-            self.cli = importlib.import_module("mothnow.cli")
-            self.adapter = importlib.import_module("mothnow.adapter")
-            self.secret = importlib.import_module("mothnow.secret")
-            self.store = importlib.import_module("mothnow.store")
-            self.model = importlib.import_module("mothnow.model")
+            self.cli = importlib.import_module("monzoglance.cli")
+            self.adapter = importlib.import_module("monzoglance.adapter")
+            self.secret = importlib.import_module("monzoglance.secret")
+            self.store = importlib.import_module("monzoglance.store")
+            self.model = importlib.import_module("monzoglance.model")
             self.fetches = 0
             self.lookups = 0
             self.session = dict(COOKIES)
@@ -102,7 +102,7 @@ def check(engine_dir, launcher):
 
         def config(self, text):
             """Write the engine's config file as given (a string), or remove it (None)."""
-            path = os.path.join(self.tmp, "config", "moth-now", "config.toml")
+            path = os.path.join(self.tmp, "config", "monzo-glance", "config.toml")
             if text is None:
                 if os.path.exists(path):
                     os.unlink(path)
@@ -126,7 +126,7 @@ def check(engine_dir, launcher):
     def later(**kw):
         return t0 + datetime.timedelta(**kw)
 
-    # ---- 1. live: a first tick fetches, paints a butterfly, and writes private files
+    # ---- 1. live: a first tick fetches, paints a pound sign, and writes private files
     w = World()
     doc = w.tick(t0)
     need(w.fetches == 1, "a cold start must fetch once (fetched %d)" % w.fetches)
@@ -139,11 +139,11 @@ def check(engine_dir, launcher):
              for d in doc["account"]["days"] for r in d["rows"]), "every account row has the same fields")
     line = json.dumps(doc)
     need("\n" not in line and json.loads(line) == doc, "the document must be one JSON line")
-    cache = os.path.join(w.tmp, "cache", "moth-now")
+    cache = os.path.join(w.tmp, "cache", "monzo-glance")
     need(mode(cache) == 0o700, "cache dir mode %o" % mode(cache))
     for f in ("snapshot.json", "state.json", "lock"):
         need(mode(os.path.join(cache, f)) == 0o600, "%s mode %o" % (f, mode(os.path.join(cache, f))))
-    log_path = os.path.join(w.tmp, "state", "moth-now", "log")
+    log_path = os.path.join(w.tmp, "state", "monzo-glance", "log")
     need(mode(log_path) == 0o600, "log mode %o" % mode(log_path))
 
     # ---- 2. the hourly gate
@@ -192,7 +192,7 @@ def check(engine_dir, launcher):
     w.session = None
     doc = w.tick(t0)
     need(face(doc) == "broken" and doc["text"] == w.model.BROKEN_GLYPH, "no session must be broken")
-    need("Not connected" in doc["card"]["banner_text"] and "moth-now login" in doc["card"]["hint_text"] and "moth-now login" in doc["tooltip"], "no connection must say how to set up login")
+    need("Not connected" in doc["card"]["banner_text"] and "monzo-glance login" in doc["card"]["hint_text"] and "monzo-glance login" in doc["tooltip"], "no connection must say how to set up login")
     w.tick(later(minutes=5))
     w.tick(later(hours=5))
     need(w.lookups == 1 and w.fetches == 0, "no session: the keyring must not be asked every tick (asked %d)" % w.lookups)
@@ -208,7 +208,7 @@ def check(engine_dir, launcher):
     w.fail = "auth"
     b = later(hours=5, minutes=1)
     doc = w.tick(b + datetime.timedelta(minutes=61))
-    need(w.fetches == 2 and "refused the connection" in doc["card"]["banner_text"] and "moth-now login" in doc["card"]["hint_text"], "a refused connection must be said, with the hint")
+    need(w.fetches == 2 and "refused the connection" in doc["card"]["banner_text"] and "monzo-glance login" in doc["card"]["hint_text"], "a refused connection must be said, with the hint")
     w.tick(b + datetime.timedelta(hours=3))
     w.tick(b + datetime.timedelta(hours=6))
     need(w.fetches == 2, "a refused session must not be retried inside 6 h (fetched %d)" % w.fetches)
@@ -220,7 +220,7 @@ def check(engine_dir, launcher):
     w = World()
     w.fail = "auth"
     doc = w.tick(t0)
-    need(face(doc) == "broken" and "refused the connection" in doc["card"]["banner_text"] and "moth-now login" in doc["card"]["hint_text"], "refused with no data must be broken with the hint")
+    need(face(doc) == "broken" and "refused the connection" in doc["card"]["banner_text"] and "monzo-glance login" in doc["card"]["hint_text"], "refused with no data must be broken with the hint")
     w.close()
     w = World()
     w.keyring_broken = True
@@ -229,11 +229,11 @@ def check(engine_dir, launcher):
     w.close()
     w = World()
     w.tick(t0)
-    with open(os.path.join(w.tmp, "cache", "moth-now", "snapshot.json"), "w") as fh:
+    with open(os.path.join(w.tmp, "cache", "monzo-glance", "snapshot.json"), "w") as fh:
         fh.write('{"fetched_at": "yesterday", "transactions": 7')
     w.fail = "network"
     doc = w.tick(later(minutes=5))
-    need(face(doc) == "broken" and doc["text"] == w.model.BROKEN_GLYPH, "a corrupt cache must be broken, never a butterfly")
+    need(face(doc) == "broken" and doc["text"] == w.model.BROKEN_GLYPH, "a corrupt cache must be broken, never a pound sign")
     w.close()
 
     # ---- 12. THE GRACE PERIOD, through the real tick and the real config file
@@ -253,7 +253,7 @@ def check(engine_dir, launcher):
         doc, _ = face_on(day, over)
         tag = "grace default, Oct %d, %s: " % (day, "over" if over else "under")
         need(face(doc) == want, tag + "face %r, expected %r" % (face(doc), want))
-        need(doc["text"] == chr(0xF1589), tag + "a neutral face is still the butterfly")
+        need(doc["text"] == chr(0xF01AE), tag + "a neutral face is still the pound sign")
         hero = doc["card"]["hero"]
         need(hero["pace_dir"] == ("over" if over else "good") and "£" in hero["pace_text"] and "£" in hero["detail_text"] and doc["card"]["chart"] is not None,
              tag + "the card must keep its numbers and tint (pace_dir %r, %r)" % (hero["pace_dir"], hero["pace_text"]))
@@ -360,7 +360,7 @@ def check(engine_dir, launcher):
     need(cfg["pace_grace_days"] == 3 and cfg["settings"].excluded_tags == ("Work trip",) and "pace_grace_days" in cfg["problem"] and "one_off_tag" in cfg["problem"],
          "a bad key beside good ones: %r" % cfg["problem"])
     like_oracle("a bad key beside good ones", doc, snap, now, excluded=("Work trip",))
-    # `moth-now status` names the months the usual month uses, and says why a value is not in use
+    # `monzo-glance status` names the months the usual month uses, and says why a value is not in use
     def status_with(config_text):
         import io
         w = World()
@@ -414,7 +414,7 @@ def check(engine_dir, launcher):
     import io
     out, err = io.StringIO(), io.StringIO()
     old = sys.stdout, sys.stderr, sys.argv
-    sys.stdout, sys.stderr, sys.argv = out, err, ["moth-now"]
+    sys.stdout, sys.stderr, sys.argv = out, err, ["monzo-glance"]
     try:
         try:
             w.cli.run()
@@ -427,7 +427,7 @@ def check(engine_dir, launcher):
     w.close()
     if launcher:
         empty = tempfile.mkdtemp(prefix="t10-nohome-")
-        p = subprocess.run(["bash", launcher], capture_output=True, text=True, timeout=30, env=dict(os.environ, MOTH_NOW_HOME=empty))
+        p = subprocess.run(["bash", launcher], capture_output=True, text=True, timeout=30, env=dict(os.environ, MONZO_GLANCE_HOME=empty))
         need(p.stdout == "" and p.returncode != 0, "a launcher without its venv must print nothing on stdout")
         shutil.rmtree(empty, ignore_errors=True)
     return fails
@@ -490,7 +490,7 @@ MUTANTS = [
 
 def main():
     if len(sys.argv) < 2:
-        print("usage: t10_moth_face.py <engine dir> [<launcher>]")
+        print("usage: t10_monzoglance_face.py <engine dir> [<launcher>]")
         return 2
     if sys.argv[1] == "--check":
         print(json.dumps(check(os.path.abspath(sys.argv[2]), sys.argv[3] if len(sys.argv) > 3 else "")))
@@ -515,8 +515,8 @@ def main():
     for name, fname, old, new in MUTANTS:
         tmp = tempfile.mkdtemp(prefix="t10-mutant-")
         try:
-            shutil.copytree(os.path.join(engine, "mothnow"), os.path.join(tmp, "mothnow"), ignore=shutil.ignore_patterns("__pycache__"))
-            path = os.path.join(tmp, "mothnow", fname)
+            shutil.copytree(os.path.join(engine, "monzoglance"), os.path.join(tmp, "monzoglance"), ignore=shutil.ignore_patterns("__pycache__"))
+            path = os.path.join(tmp, "monzoglance", fname)
             src = open(path, encoding="utf-8").read()
             if src.count(old) != 1 or old == new:
                 print("  ERROR mutant %r did not apply (%d matches)" % (name, src.count(old)))

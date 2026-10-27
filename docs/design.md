@@ -1,13 +1,13 @@
-# Moth — UK (GBP) fork of Pupa, reading Monzo directly
+# Monzo Glance — UK (GBP) fork of Pupa, reading Monzo directly
 
 Date: 2026-10-11
 Status: approved in chat; this file is the record. Supersedes the earlier Actual-budget design.
 
 ## Goal
 
-Pupa's butterfly bar widget — this month's spending pace against your usual
+Pupa's bar widget — this month's spending pace against your usual
 month — reading a personal **Monzo** account directly through Monzo's own
-developer API. No Actual Budget, no Enable Banking, no HSBC. Renamed **Moth**,
+developer API. No Actual Budget, no Enable Banking, no HSBC. Renamed **Monzo Glance**,
 denominated in **£**.
 
 ## Why not Actual / Enable Banking
@@ -21,8 +21,8 @@ HSBC.
 ## Auth
 
 Monzo OAuth 2.0, **confidential client**, redirect `http://localhost:8080/callback`
-(no domain, no HTTPS). `moth-now login`:
-1. takes client_id / client_secret / redirect_uri (env `MOTH_MONZO_*`);
+(no domain, no HTTPS). `monzo-glance login`:
+1. takes client_id / client_secret / redirect_uri (env `MONZO_GLANCE_*`);
 2. runs a throwaway local HTTP server, opens `auth.monzo.com` with a random
    `state`, catches `?code`, exchanges it for access + refresh tokens;
 3. the user approves in the Monzo app (SCA);
@@ -38,7 +38,7 @@ client if the library fights the localhost flow).
 ## The 90-day window — a persisted ledger
 
 Monzo returns the **last 90 days** except in the 5 minutes right after auth.
-So the adapter keeps `~/.cache/moth-now/ledger.json`, keyed by transaction id:
+So the adapter keeps `~/.cache/monzo-glance/ledger.json`, keyed by transaction id:
 login seeds full history; each fetch upserts the recent window; the snapshot is
 rebuilt from the ledger. Otherwise "your usual month" collapses to ~3 months.
 
@@ -62,7 +62,7 @@ live rows.
 
 ## Changed vs the built fork
 
-Keep: Moth name/id, `moth-now`, £, `model.py`/`fmt.py`/`store.py`/QML, the test
+Keep: Monzo Glance name/id, `monzo-glance`, £, `model.py`/`fmt.py`/`store.py`/QML, the test
 harness. Replace: `adapter.py`, `login.py`, `groups.py` (Monzo default map; drop
 the Actual `from_snapshot`), data-source strings, `requirements`, the T9 adapter
 test block, this spec, README.

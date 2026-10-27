@@ -1,23 +1,23 @@
 #!/usr/bin/env python3
-"""Moth without a Monzo account: the engine's one JSON line for an INVENTED household.
+"""Monzo Glance without a Monzo account: the engine's one JSON line for an INVENTED household.
 
     tools/demo.py [SCENE]
 
-    under        (default) day 12, spending under the usual pace: a green butterfly
-    over         day 12 with one large purchase: an amber butterfly
-    grace        day 2: the grace period, a neutral butterfly, the card still has its figures
-    stale        data four hours old: a greyed butterfly and a banner
+    under        (default) day 12, spending under the usual pace: a green pound sign
+    over         day 12 with one large purchase: an amber pound sign
+    grace        day 2: the grace period, a neutral pound sign, the card still has its figures
+    stale        data four hours old: a greyed pound sign and a banner
     reconnect    an account that needs reconnecting in Monzo, and day-old bank data
-    new          no complete month yet: a neutral butterfly, "no usual month yet"
+    new          no complete month yet: a neutral pound sign, "no usual month yet"
     signed-out   no session: the broken-link glyph and the sign-in hint
 
 Every merchant, bill, account and amount comes from the test suite's synthetic fixture
-(engine/tests/t9_moth_model.py), computed by the real model on a pinned clock (Oct 2025), so
+(engine/tests/t9_monzoglance_model.py), computed by the real model on a pinned clock (Oct 2025), so
 the output never changes. Nothing is read from Monzo, the keyring or the cache.
 
 Show a scene on the bar, for this shell session only:
-    omarchy-shell io.github.silentjay.moth fixture "python3 ~/.config/omarchy/plugins/io.github.silentjay.moth/tools/demo.py over"
-    omarchy-shell io.github.silentjay.moth fixture off        # back to your own data
+    omarchy-shell io.github.silentjay.monzoglance fixture "python3 ~/.config/omarchy/plugins/io.github.silentjay.monzoglance/tools/demo.py over"
+    omarchy-shell io.github.silentjay.monzoglance fixture off        # back to your own data
 
 It needs nothing but Python 3.11+: the model is pure standard library.
 """
@@ -31,8 +31,8 @@ sys.path.insert(0, os.path.join(ROOT, "engine"))
 sys.path.insert(0, os.path.join(ROOT, "engine", "tests"))
 sys.dont_write_bytecode = True
 
-import t9_moth_model as fixture   # noqa: E402  (the synthetic household)
-from mothnow import cli, model    # noqa: E402
+import t9_monzoglance_model as fixture   # noqa: E402  (the synthetic household)
+from monzoglance import cli, model    # noqa: E402
 
 SCENES = ("under", "over", "grace", "stale", "reconnect", "new", "signed-out")
 
@@ -93,7 +93,7 @@ def self_check():
     under, over = scene("under"), scene("over")
     assert under["face"]["state"] == "good" and "under a usual day 12" in under["card"]["hero"]["pace_text"], under["card"]["hero"]
     assert over["face"]["state"] == "over" and "over a usual day 12" in over["card"]["hero"]["pace_text"], over["card"]["hero"]
-    assert scene("grace")["face"]["state"] == "plain" and scene("grace")["text"] == chr(0xF1589)
+    assert scene("grace")["face"]["state"] == "plain" and scene("grace")["text"] == chr(0xF01AE)
     assert scene("stale")["face"]["state"] == "stale"
     assert scene("new")["card"]["hero"]["pace_text"].startswith("no usual month yet")
     assert scene("signed-out")["text"] == chr(0xF0338)

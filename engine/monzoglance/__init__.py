@@ -1,4 +1,4 @@
-"""moth-now: the engine behind Moth, the Monzo bar plugin for Omarchy (io.github.silentjay.moth).
+"""monzo-glance: the engine behind Monzo Glance, the Monzo bar plugin for Omarchy (io.github.silentjay.monzoglance).
 
     adapter.py   the ONE module that talks to Monzo (swap it to change the data source)
     model.py     pure: a snapshot + a clock -> every display string the card paints

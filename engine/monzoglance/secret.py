@@ -2,7 +2,7 @@
 libsecret's `secret-tool`. Never in a file, never in a log, never on argv: the secret crosses a
 pipe on stdin (store) or stdout (lookup) and nowhere else.
 
-The item: label "Monzo connection (moth-now)", attributes service=moth-now kind=session.
+The item: label "Monzo connection (monzo-glance)", attributes service=monzo-glance kind=session.
 The value is a small JSON object: {client_id, client_secret, redirect_uri, access_token,
 access_token_expiry (epoch), refresh_token}. `MonzoStorage` is the handler monzo-api calls to
 persist a refreshed token, so refreshed tokens land in the keyring too.
@@ -10,8 +10,8 @@ persist a refreshed token, so refreshed tokens land in the keyring too.
 import json
 import subprocess
 
-ATTRS = ["service", "moth-now", "kind", "session"]
-LABEL = "Monzo connection (moth-now)"
+ATTRS = ["service", "monzo-glance", "kind", "session"]
+LABEL = "Monzo connection (monzo-glance)"
 TOOL = "/usr/bin/secret-tool"
 TIMEOUT = 15
 

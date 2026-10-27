@@ -8,7 +8,7 @@ through secret.MonzoStorage. Read-only: this module only ever calls the list end
 TWO MONZO FACTS THAT SHAPE THIS FILE
   1. Monzo returns only the LAST 90 DAYS, except in the 5 minutes right after login, when the
      whole history is available. So `seed()` (called by login) pulls everything once, and the
-     engine keeps a persistent ledger (~/.cache/moth-now/ledger.json) that every later fetch
+     engine keeps a persistent ledger (~/.cache/monzo-glance/ledger.json) that every later fetch
      upserts into. Without it "your usual month" would collapse to three months.
   2. Each transaction carries Monzo's own `include_in_spending` flag, so pot and internal
      transfers are excluded the way Monzo itself excludes them.

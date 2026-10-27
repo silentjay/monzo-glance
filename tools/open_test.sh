@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# The two ways bin/moth-open can go, and install-webapp.sh, with nothing real launched:
+# The two ways bin/monzo-glance-open can go, and install-webapp.sh, with nothing real launched:
 # the Omarchy helpers, xdg-open and the web app installer are replaced by recorders on PATH,
 # HOME is a temp directory, and PATH holds nothing else of Omarchy's. No network, no browser,
 # and no web app is created for real.
@@ -7,7 +7,7 @@
 #   tools/open_test.sh        exit 0 when every check passes
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-OPEN="$ROOT/bin/moth-open"
+OPEN="$ROOT/bin/monzo-glance-open"
 URL="https://web.monzo.com"
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
@@ -53,7 +53,7 @@ run "$TMP/bin:$BASE_PATH" "$ROOT/install-webapp.sh"
 check "install-webapp twice: nothing is reinstalled" "$(calls)" ""
 run "$TMP/bin:$BASE_PATH" "$ROOT/install-webapp.sh" --force
 check "install-webapp --force: reinstalled" "$(calls | cut -d' ' -f1-2)" "omarchy-webapp-install Monzo"
-check "no image is bundled in the repository" "$(cd "$ROOT" && git ls-files 2>/dev/null | grep -i -E 'monzo[^/]*\.(png|svg|ico|jpg)$|monarch|logo' || true)" ""
+check "no image is bundled in the repository" "$(cd "$ROOT" && git ls-files 2>/dev/null | grep -v '^docs/monzo-glance-' | grep -i -E 'monzo[^/]*\.(png|svg|ico|jpg)$|monarch|logo' || true)" ""
 
 # ---- 3. web app installed: Omarchy's launch-or-focus helper, by window class
 run "$TMP/bin:$BASE_PATH" "$OPEN" --print

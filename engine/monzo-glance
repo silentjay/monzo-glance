@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# monzo-glance: launcher for the engine behind Monzo Glance, the Monzo bar plugin (io.github.silentjay.monzoglance).
+#
+# The engine is a Python package in its own venv, installed by ../install.sh:
+#     ~/.local/share/monzo-glance/monzoglance/    the package (a copy of engine/monzoglance)
+#     ~/.local/share/monzo-glance/venv/          Python + the pinned, hash-checked Monzo-API client
+# This file only starts it. If the venv or the package is missing, exec fails, NOTHING reaches
+# stdout, and the bar widget paints its broken-link glyph: fail-empty, never fail-plausible.
+#
+#     monzo-glance            the bar tick (one JSON line)      monzo-glance login    sign in
+#     monzo-glance --refresh  fetch now                         monzo-glance status   what it knows
+HOME_DIR="${MONZO_GLANCE_HOME:-$HOME/.local/share/monzo-glance}"
+exec env PYTHONPATH="$HOME_DIR" "$HOME_DIR/venv/bin/python" -B -m monzoglance.cli "$@"

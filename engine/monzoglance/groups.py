@@ -3,11 +3,11 @@
 The card's rows are MONZO'S OWN CATEGORIES, one row each: groceries, eating_out, shopping,
 transport, entertainment, holidays, cash, expenses, bills, general. A transaction's `category`
 field names the row it lands in; anything Monzo adds that is not listed lands in the LAST row
-(Monzo's own catch-all, "general") and the engine reports its name in `unmapped` (`moth-now
+(Monzo's own catch-all, "general") and the engine reports its name in `unmapped` (`monzo-glance
 status` prints the list), so a new or renamed category is visible instead of silently miscounted.
 
 The rows and the map are yours to change: copy config.example.toml to
-~/.config/moth-now/config.toml and edit its [[groups]] tables (cli.load_config reads them,
+~/.config/monzo-glance/config.toml and edit its [[groups]] tables (cli.load_config reads them,
 `Grouping` holds them). A Monzo install needs no mapping at all.
 """
 

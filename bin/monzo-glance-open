@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# moth-open: open Monzo, the way the bar click and the card's "Open Monzo" button do.
+# monzo-glance-open: open Monzo, the way the bar click and the card's "Open Monzo" button do.
 #
 #   1. The Omarchy web app, when it is installed (install-webapp.sh creates it): the launcher
 #      ~/.local/share/applications/Monzo.desktop. Its URL is READ from that file, so editing
@@ -13,11 +13,11 @@
 # would be focused instead. A Chromium --app window's class is
 # <browser>-<host>__<path>-<profile>, so "<host>__" names this app only.
 #
-#   moth-open --print    say which way it would go, and open nothing:
+#   monzo-glance-open --print    say which way it would go, and open nothing:
 #                        "webapp <pattern> <url>" or "browser <url>"
 set -euo pipefail
 URL_DEFAULT="https://web.monzo.com"
-DESKTOP="${MOTH_DESKTOP:-$HOME/.local/share/applications/Monzo.desktop}"
+DESKTOP="${MONZO_GLANCE_DESKTOP:-$HOME/.local/share/applications/Monzo.desktop}"
 
 url=""
 if [[ -r $DESKTOP ]]; then

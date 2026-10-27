@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "id": "io.github.silentjay.moth",
-  "name": "Moth",
+  "id": "io.github.silentjay.monzoglance",
+  "name": "Monzo Glance",
   "version": "0.1.0",
   "author": "silentjay",
   "license": "MIT",
-  "description": "Monzo in your bar: this month's spending pace against your usual month, as a butterfly. Read-only, unofficial. A UK (GBP) fork of Pupa.",
+  "description": "Monzo in your bar: this month's spending pace against your usual month, as a pound sign. Read-only, unofficial. A UK (GBP) fork of Pupa.",
   "kinds": [
     "bar-widget"
   ],
@@ -13,19 +13,19 @@
     "barWidget": "BarWidget.qml"
   },
   "barWidget": {
-    "displayName": "Moth",
-    "description": "This month's spending pace against your usual month, as a butterfly. Hover for the card, click for Monzo. Read-only; unofficial.",
+    "displayName": "Monzo Glance",
+    "description": "This month's spending pace against your usual month, as a pound sign. Hover for the card, click for Monzo. Read-only; unofficial.",
     "category": "Info",
     "aliases": [
-      "moth",
-      "actual",
+      "monzo",
+      "glance",
       "spending",
       "budget"
     ],
     "allowMultiple": false,
     "defaultSection": "center",
     "defaults": {
-      "faceExec": "~/.local/bin/moth-now",
+      "faceExec": "~/.local/bin/monzo-glance",
       "faceInterval": 300,
       "faceHover": "card",
       "faceTint": true
@@ -36,7 +36,7 @@
         "type": "string",
         "label": "Engine command",
         "description": "The command run on every tick. Its last stdout line is the whole display: the glyph, the face state and every string on the card.",
-        "defaultValue": "~/.local/bin/moth-now"
+        "defaultValue": "~/.local/bin/monzo-glance"
       },
       {
         "key": "faceInterval",
@@ -49,7 +49,7 @@
         "key": "faceHover",
         "type": "select",
         "label": "Hover",
-        "description": "What a hover over the butterfly shows: the card, or the same strings as a plain text tooltip.",
+        "description": "What a hover over the pound sign shows: the card, or the same strings as a plain text tooltip.",
         "options": [
           {
             "value": "card",
@@ -65,7 +65,7 @@
       {
         "key": "faceTint",
         "type": "boolean",
-        "label": "Tint the butterfly by pace",
+        "label": "Tint the pound sign by pace",
         "description": "Green at or under a usual month, amber ahead of it. Off paints it in the bar's own color; stale and broken look the same either way.",
         "defaultValue": true
       }

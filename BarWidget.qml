@@ -5,7 +5,7 @@ import Quickshell.Io
 import qs.Commons
 import qs.Ui
 
-// Moth: Monzo Money on the bar. One butterfly, never a number.
+// Monzo Glance: your Monzo spending on the bar. One pound sign, never a number.
 //
 //   green   this month's spending is at or under a usual month's pace
 //   amber   it is ahead
@@ -17,27 +17,27 @@ import qs.Ui
 // click asks the engine to fetch now.
 //
 // THE PAINTER RULE: the engine formats, the painter paints. This file and HoverCard.qml compute
-// nothing and build no text. The engine, `moth-now`, prints one JSON line with the glyph, the
+// nothing and build no text. The engine, `monzo-glance`, prints one JSON line with the glyph, the
 // face state and every string on the card; this file picks a color from the state and hands the
 // card its fields.
 //
-// 🔴 NEVER A PLAUSIBLE FACE OVER BAD DATA. The butterfly is painted only when the last run ended
+// 🔴 NEVER A PLAUSIBLE FACE OVER BAD DATA. The pound sign is painted only when the last run ended
 // in a JSON object whose `face.state` is one this file knows and whose `text` is not blank.
 // No output, unparsable output, an unknown state, or the engine's own "broken" all paint the
 // broken-link glyph, which no working state can be mistaken for. Every run replaces the face,
 // and a run that outlives a whole tick is withdrawn rather than waited on.
 BarWidget {
   id: root
-  moduleName: "io.github.silentjay.moth"
+  moduleName: "io.github.silentjay.monzoglance"
 
   // nf-md-link_off. Built from the code point: a literal private-use glyph is stripped by some
   // editors and tools, and an empty glyph is an invisible widget.
   readonly property string brokenGlyph: String.fromCodePoint(0xF0338)
-  readonly property string unavailableText: "Monzo feed unavailable: moth-now printed nothing it could read."
+  readonly property string unavailableText: "Monzo feed unavailable: monzo-glance printed nothing it could read."
 
   // ---- settings (shell.json entry; manifest.json declares them)
   readonly property string faceExec: {
-    var v = root.setting("faceExec", "~/.local/bin/moth-now")
+    var v = root.setting("faceExec", "~/.local/bin/monzo-glance")
     return typeof v === "string" ? v.trim() : ""
   }
   readonly property int faceInterval: {
@@ -135,7 +135,7 @@ BarWidget {
     onTriggered: {
       // A run that outlives a whole tick is withdrawn, not waited on: a hung engine must not
       // hold the last face on the bar. It is not killed; its answer is painted when it lands.
-      if (faceProc.running) root.setBroken("moth-now has not answered for a whole tick.")
+      if (faceProc.running) root.setBroken("monzo-glance has not answered for a whole tick.")
       else root.runEngine("")
     }
   }
@@ -183,9 +183,9 @@ BarWidget {
   }
 
   // ---- click: the Monzo web app when it is installed (opened or focused by Omarchy's own
-  //      helper), else Monzo in the default browser. bin/moth-open decides.
+  //      helper), else Monzo in the default browser. bin/monzo-glance-open decides.
   readonly property string openCommand: {
-    var path = String(Qt.resolvedUrl("bin/moth-open")).replace(/^file:\/\//, "")
+    var path = String(Qt.resolvedUrl("bin/monzo-glance-open")).replace(/^file:\/\//, "")
     return "'" + path.replace(/'/g, "'\\''") + "'"
   }
   function openMonzo() {
@@ -251,13 +251,13 @@ BarWidget {
     }
   }
 
-  //   omarchy-shell io.github.silentjay.moth status | jq
-  //   omarchy-shell io.github.silentjay.moth refresh
-  //   omarchy-shell io.github.silentjay.moth open                      # what a click does
-  //   omarchy-shell io.github.silentjay.moth hovercard open|close      # screenshot aid
-  //   omarchy-shell io.github.silentjay.moth fixture '<command>'       # session only; `off` restores
+  //   omarchy-shell io.github.silentjay.monzoglance status | jq
+  //   omarchy-shell io.github.silentjay.monzoglance refresh
+  //   omarchy-shell io.github.silentjay.monzoglance open                      # what a click does
+  //   omarchy-shell io.github.silentjay.monzoglance hovercard open|close      # screenshot aid
+  //   omarchy-shell io.github.silentjay.monzoglance fixture '<command>'       # session only; `off` restores
   IpcHandler {
-    target: "io.github.silentjay.moth"
+    target: "io.github.silentjay.monzoglance"
     function refresh(): void { root.broadcast("refresh") }
     function open(): void { root.openMonzo() }
     function status(): string { return root.statusJson() }
@@ -328,7 +328,7 @@ BarWidget {
     keepSpace: true
     hasVisualContent: text !== ""
     foreground: root.faceColor
-    // Grey = stale. The glyph stays a butterfly; the card says how old the data is.
+    // Grey = stale. The glyph stays a pound sign; the card says how old the data is.
     dimmed: root.faceState === "stale"
     // With the card the plain tooltip steps aside; "text" shows the engine's fallback text.
     tooltipText: root.hoverCardMode ? "" : root.faceTooltip

@@ -30,10 +30,10 @@ PACE (the face's tint, the hero line)
   Green = under or at; amber = over. Nothing on this card is red.
 
 THE GRACE PERIOD (in the first days of a month a single charge decides the color)
-  On days 1..pace_grace_days of a month (default 3; 0 switches it off) the FACE is "plain": a
-  butterfly in the bar's own color, neither green nor amber. Only the face waits. The card is
+  On days 1..pace_grace_days of a month (default 3; 0 switches it off) the FACE is "plain": the
+  pound sign in the bar's own color, neither green nor amber. Only the face waits. The card is
   computed and tinted exactly as on any other day, and its note says from which day the bar
-  takes a color, so the neutral butterfly cannot be read as "on pace".
+  takes a color, so the neutral pound sign cannot be read as "on pace".
       projection = whole(usual month's total) + diff              # sums of the shown figures
 """
 import datetime
@@ -41,13 +41,13 @@ from decimal import Decimal
 
 from . import fmt, groups
 
-GLYPH = "\U000f1589"          # nf-md-butterfly: a generic butterfly from Nerd Fonts' Material Design
-                              # set, not Monarch Money's logo. 8-digit escape on purpose.
-BROKEN_GLYPH = "\U000f0338"   # nf-md-link_off: the feed is broken. Never a butterfly.
-assert (len(GLYPH), ord(GLYPH)) == (1, 0xF1589), "GLYPH is not U+F1589"
+GLYPH = "\U000f01ae"          # nf-md-currency_gbp: a pound sign, from Nerd Fonts' Material Design set.
+                              # 8-digit escape on purpose.
+BROKEN_GLYPH = "\U000f0338"   # nf-md-link_off: the feed is broken. Never the pound sign.
+assert (len(GLYPH), ord(GLYPH)) == (1, 0xF01AE), "GLYPH is not U+F01AE"
 assert (len(BROKEN_GLYPH), ord(BROKEN_GLYPH)) == (1, 0xF0338), "BROKEN_GLYPH is not U+F0338"
 
-STALE_AFTER = 3 * 3600        # data older than this: the butterfly goes grey
+STALE_AFTER = 3 * 3600        # data older than this: the pound sign goes grey
 BROKEN_AFTER = 36 * 3600      # older than this it is not "this month's spending" any more
 
 ONE_OFF_TAG = "One-off"       # config: one_off_tag. Left out of spending and counted in the note
@@ -63,9 +63,9 @@ BAND_MIN_MONTHS = 4           # the middle-half band needs a few months to mean 
 BILL_WINDOW_DAYS = 45
 ACTIVE_ACCOUNT_DAYS = 60
 CHART_PAD = Decimal("0.08")
-PACE_GRACE_DAYS = 3           # days 1..N of a month: the butterfly stays neutral (config: pace_grace_days)
+PACE_GRACE_DAYS = 3           # days 1..N of a month: the pound sign stays neutral (config: pace_grace_days)
 
-OPEN_TEXT = "Open Monzo"     # the card's one control; the widget runs bin/moth-open
+OPEN_TEXT = "Open Monzo"     # the card's one control; the widget runs bin/monzo-glance-open
 
 ZERO = Decimal("0")
 
@@ -558,7 +558,7 @@ def build_doc(snapshot, now, problem="", grace_days=PACE_GRACE_DAYS, settings=No
     age = now.timestamp() - snapshot["fetched_at"]
     if age > BROKEN_AFTER:
         return broken_doc("Monzo data is %s old%s" % (fmt.age_text(age), (": " + problem) if problem else ""),
-                          "It refreshes by itself once Monzo answers; `moth-now status` says why it has not.")
+                          "It refreshes by itself once Monzo answers; `monzo-glance status` says why it has not.")
     card, pace_state = build_card(snapshot, now, grace_days, settings)
     state = face_for(pace_state, age, now.day, grace_days)
     if state == "stale":

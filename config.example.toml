@@ -1,13 +1,13 @@
-# Moth / moth-now: every setting, with its default.
+# Monzo Glance / monzo-glance: every setting, with its default.
 #
-# Copy this file to ~/.config/moth-now/config.toml and change what you like. The file is
+# Copy this file to ~/.config/monzo-glance/config.toml and change what you like. The file is
 # optional: without it the defaults below apply. The engine only reads it, never writes it.
 # A value the engine cannot use is not guessed at: the default stays in force and
-# `moth-now status` prints a `config` line saying why.
+# `monzo-glance status` prints a `config` line saying why.
 
 # ---- The grace period -------------------------------------------------------------------------
 # In the first days of a month a single charge decides whether you are "over" or "under". On
-# days 1..pace_grace_days the butterfly on the bar stays neutral (no green, no amber); the hover
+# days 1..pace_grace_days the pound sign on the bar stays neutral (no green, no amber); the hover
 # card still shows every figure. 0 turns the grace period off. Whole number, 0 to 31.
 pace_grace_days = 3
 
@@ -38,11 +38,11 @@ excluded_tags = []
 # ---- The card's rows: your spending groups ----------------------------------------------------
 # The card shows ONE ROW PER MONZO CATEGORY (a transaction's "category" field), in this order:
 # groceries, eating_out, shopping, transport, entertainment, holidays, cash, expenses, bills,
-# general — so a fresh Moth install needs no mapping here at all. Define any [[groups]] tables
+# general — so a fresh Monzo Glance install needs no mapping here at all. Define any [[groups]] tables
 # below to take over and make the rows yourself. Rules:
 #   - one to ten groups; a category belongs to one group only;
 #   - the LAST group also takes every category you did not list (Monzo's own "general" is the
-#     default catch-all), and `moth-now status` names those under `unmapped`;
+#     default catch-all), and `monzo-glance status` names those under `unmapped`;
 #   - if you define any [[groups]] here, they replace the default map entirely.
 
 # The defaults, written out (uncomment all of them to start editing):
@@ -93,9 +93,9 @@ excluded_tags = []
 # ("usual = Jan–Sep 2025 average"). It needs one complete month before it says anything.
 #
 # The ledger is not a setting either: Monzo exposes only the last 90 days outside the five
-# minutes after login, so Moth keeps every transaction it has seen in
-# ~/.cache/moth-now/ledger.json and builds the usual month from that.
+# minutes after login, so Monzo Glance keeps every transaction it has seen in
+# ~/.cache/monzo-glance/ledger.json and builds the usual month from that.
 #
 # To check the engine against Monzo itself: total your spending for a range in the Monzo app (or
-# a spreadsheet export), and run `moth-now check FROM TO` (dates as YYYY-MM-DD). The two totals
+# a spreadsheet export), and run `monzo-glance check FROM TO` (dates as YYYY-MM-DD). The two totals
 # should agree to the pound.

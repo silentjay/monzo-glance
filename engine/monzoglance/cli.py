@@ -1,23 +1,23 @@
-"""moth-now: the command the bar runs, and a few verbs for a terminal.
+"""monzo-glance: the command the bar runs, and a few verbs for a terminal.
 
-    moth-now                    the bar tick: ONE JSON line on stdout (text, tooltip, face, card).
+    monzo-glance                    the bar tick: ONE JSON line on stdout (text, tooltip, face, card).
                                 Fetches from Monzo at most hourly, behind a non-blocking lock;
                                 otherwise it reads the cache and recomputes for the current clock.
-    moth-now --refresh          the same, but fetch now (the IPC refresh / middle click). Floor: 60 s.
-    moth-now login              connect your Monzo account (see login.py)
-    moth-now logout             forget the connection
-    moth-now status             what the engine knows, WITHOUT amounts
-    moth-now check [FROM TO]    spending over a range by this engine's rule, with what was left
+    monzo-glance --refresh          the same, but fetch now (the IPC refresh / middle click). Floor: 60 s.
+    monzo-glance login              connect your Monzo account (see login.py)
+    monzo-glance logout             forget the connection
+    monzo-glance status             what the engine knows, WITHOUT amounts
+    monzo-glance check [FROM TO]    spending over a range by this engine's rule, with what was left
                                 out, to set beside your Monzo spending
-    moth-now --as-of ISO        compute for a pinned clock from the cache (never fetches)
-    moth-now --snapshot FILE    compute from a snapshot file instead of the cache (never fetches)
+    monzo-glance --as-of ISO        compute for a pinned clock from the cache (never fetches)
+    monzo-glance --snapshot FILE    compute from a snapshot file instead of the cache (never fetches)
 
 FACE STATES (the bar shows the glyph only, never a number)
-    good / over / plain   a butterfly: data no older than 3 h (plain = no usual month yet)
-    stale                 a butterfly, greyed: the data is 3 h to 36 h old
+    good / over / plain   a pound sign: data no older than 3 h (plain = no usual month yet)
+    stale                 a pound sign, greyed: the data is 3 h to 36 h old
     broken                a broken-link glyph: no connection, no data, or data older than 36 h
   The tick ALWAYS prints a document when it can say what is wrong; the widget treats no output,
-  unparsable output or an unknown state as broken too. A butterfly is never painted over bad data.
+  unparsable output or an unknown state as broken too. A pound sign is never painted over bad data.
 """
 import datetime
 import json
@@ -40,7 +40,7 @@ PROBLEM = {
     "keyring": "the keyring could not be read",
     "no-session": "not connected",
 }
-SIGN_IN_HINT = "Connect Monzo: run `moth-now login` in a terminal."
+SIGN_IN_HINT = "Connect Monzo: run `monzo-glance login` in a terminal."
 
 
 CONFIG_KEYS = ("pace_grace_days", "one_off_tag", "excluded_tags", "usual_since", "groups")
@@ -48,8 +48,8 @@ USUAL_SINCE = re.compile(r"^(\d{4})-(0[1-9]|1[0-2])$")
 
 
 def load_config():
-    """The optional config file, ~/.config/moth-now/config.toml (config.example.toml has every key):
-        pace_grace_days   whole number 0..31, default 3: on days 1..N of a month the butterfly
+    """The optional config file, ~/.config/monzo-glance/config.toml (config.example.toml has every key):
+        pace_grace_days   whole number 0..31, default 3: on days 1..N of a month the pound sign
                           stays neutral (0 = color from day 1).
         one_off_tag       the tag that marks a one-off purchase (default "One-off"): left out of
                           spending and counted in the card's note. In Monzo, tags live in a
@@ -187,7 +187,7 @@ def tick(now, force=False):
     problem = PROBLEM.get(state.get("last_error") or "", "")
     if snapshot is None:
         why = problem or "no Monzo data yet"
-        hint = SIGN_IN_HINT if state.get("last_error") in ("auth", "no-session", None) else "It retries by itself; `moth-now status` says more."
+        hint = SIGN_IN_HINT if state.get("last_error") in ("auth", "no-session", None) else "It retries by itself; `monzo-glance status` says more."
         return model.broken_doc(why[0].upper() + why[1:], hint)
     cfg = load_config()
     doc = model.build_doc(snapshot, now, problem, cfg["pace_grace_days"], cfg["settings"])
@@ -254,12 +254,12 @@ def cmd_check(args, now):
     Prints dollar figures: for a terminal, not a log."""
     snapshot = store.read_snapshot()
     if not snapshot:
-        sys.stdout.write("moth-now check: no cached data yet\n")
+        sys.stdout.write("monzo-glance check: no cached data yet\n")
         return 1
     start = model.parse_date(args[0]) if len(args) > 0 else datetime.date(now.year, 1, 1)
     end = model.parse_date(args[1]) if len(args) > 1 else now.date()
     if start < model.parse_date(snapshot["window_start"]):
-        sys.stdout.write("moth-now check: the cache starts %s, after %s\n" % (snapshot["window_start"], start))
+        sys.stdout.write("monzo-glance check: the cache starts %s, after %s\n" % (snapshot["window_start"], start))
         return 1
     settings = load_config()["settings"]
     hidden = {a["id"] for a in snapshot["accounts"] if a.get("hidden")}
@@ -331,7 +331,7 @@ def run():
     except Exception as e:      # noqa: BLE001
         store.log("crash", error=type(e).__name__)
         if sys.argv[1:2] and sys.argv[1] in VERBS:
-            sys.stderr.write("moth-now %s failed: %s\n" % (sys.argv[1], type(e).__name__))
+            sys.stderr.write("monzo-glance %s failed: %s\n" % (sys.argv[1], type(e).__name__))
             sys.exit(1)
         sys.exit(0)
 

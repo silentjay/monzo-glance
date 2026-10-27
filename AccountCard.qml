@@ -2,7 +2,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import qs.Commons
 
-// Moth's second view: the Monzo account itself — balance, spent today, with pots, the pots, and
+// Monzo Glance's second view: the Monzo account itself — balance, spent today, with pots, the pots, and
 // the last seven days of transactions.
 //
 // Like HoverCard.qml, every string here is a whole field from the engine (`model.build_account`).

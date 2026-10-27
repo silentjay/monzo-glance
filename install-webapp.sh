@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Optional: create the Monzo web app that a click on the butterfly and the card's
+# Optional: create the Monzo web app that a click on the pound sign and the card's
 # "Open Monzo" button open (or focus). Without it they open Monzo in your default browser.
 #
 # It is an ordinary Omarchy web app, made by Omarchy's own installer:
@@ -28,4 +28,4 @@ omarchy-webapp-install "$NAME" "$URL"
 
 [[ -f $DESKTOP ]] || { echo "install-webapp.sh: $DESKTOP was not created" >&2; exit 1; }
 echo "Created the $NAME web app: $DESKTOP"
-echo "The butterfly and \"Open Monzo\" now open or focus it."
+echo "The pound sign and \"Open Monzo\" now open or focus it."

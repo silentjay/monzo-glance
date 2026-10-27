@@ -12,7 +12,7 @@ assert (ord(MINUS), ord(UP), ord(DOWN), ord(DOT), ord(NDASH), ord(APPROX)) == (
 
 MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
-CURRENCY = "\u00a3"         # POUND SIGN: Moth is a UK fork (HSBC + Monzo, GBP)
+CURRENCY = "\u00a3"         # POUND SIGN: Monzo Glance is a UK fork (HSBC + Monzo, GBP)
 
 
 def whole(value):

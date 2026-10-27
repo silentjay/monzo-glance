@@ -15,7 +15,7 @@ set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PY="${1:-}"
 if [[ -z $PY ]]; then
-  for candidate in "$ROOT/.venv/bin/python" "$HOME/.local/share/moth-now/venv/bin/python"; do
+  for candidate in "$ROOT/.venv/bin/python" "$HOME/.local/share/monzo-glance/venv/bin/python"; do
     [[ -x $candidate ]] && { PY=$candidate; break; }
   done
 fi
@@ -23,8 +23,8 @@ fi
 PY="$(realpath -s "$PY")"       # a venv python reached through ".." makes Python warn about its prefix
 
 rc=0
-"$PY" -B -W error::SyntaxWarning "$ROOT/engine/tests/t9_moth_model.py" "$ROOT/engine" || rc=1
-"$PY" -B -W error::SyntaxWarning "$ROOT/engine/tests/t10_moth_face.py" "$ROOT/engine" "$ROOT/engine/moth-now" || rc=1
+"$PY" -B -W error::SyntaxWarning "$ROOT/engine/tests/t9_monzoglance_model.py" "$ROOT/engine" || rc=1
+"$PY" -B -W error::SyntaxWarning "$ROOT/engine/tests/t10_monzoglance_face.py" "$ROOT/engine" "$ROOT/engine/monzo-glance" || rc=1
 "$PY" -B "$ROOT/tools/demo.py" --check || rc=1
 "$ROOT/tools/open_test.sh" || rc=1
 echo

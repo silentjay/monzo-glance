@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to Moth (a UK/GBP fork of Pupa) are recorded here. Versions follow
+All notable changes to Monzo Glance (a UK/GBP fork of Pupa) are recorded here. Versions follow
 [Semantic Versioning](https://semver.org/).
 
 ## Unreleased
@@ -28,13 +28,13 @@ All notable changes to Moth (a UK/GBP fork of Pupa) are recorded here. Versions 
 The fork, landed: Pupa's butterfly, now reading **Monzo** directly instead of Monarch Money.
 
 ### Changed
-- The data source is Monzo's own developer API (`engine/mothnow/adapter.py`, via
+- The data source is Monzo's own developer API (`engine/monzoglance/adapter.py`, via
   [`Monzo-API`](https://pypi.org/project/Monzo-API/)). No aggregator, no server to run.
 - Money is shown in **£**.
-- `moth-now login` runs a localhost OAuth flow (redirect `http://localhost:8080/callback`); the
+- `monzo-glance login` runs a localhost OAuth flow (redirect `http://localhost:8080/callback`); the
   access and refresh tokens go straight to the keyring. Setup is a Monzo OAuth client you create
   at developers.monzo.com — no domain, no HTTPS.
-- A **persistent ledger** (`~/.cache/moth-now/ledger.json`): Monzo exposes only the last 90 days
+- A **persistent ledger** (`~/.cache/monzo-glance/ledger.json`): Monzo exposes only the last 90 days
   except in the five minutes after login, so `login` seeds full history and every fetch upserts
   the recent window into the ledger, which the usual month is built from.
 - Money in (positive amounts) is not spending; pot moves and internal transfers are excluded by
@@ -76,7 +76,7 @@ The first public release: a starting stage.
   signed out, without data, or with data over 36 hours old. A butterfly is never painted over
   bad data.
 
-### The engine (`moth-now`)
+### The engine (`monarch-now`)
 - Read-only by construction and by guard: every GraphQL document is parsed and anything but a
   query is refused before it is sent.
 - Sign-in in a real Chrome or Chromium window with a throwaway profile; the session goes
@@ -86,7 +86,7 @@ The first public release: a starting stage.
   twelve at most.
 - An optional `config.toml`: the grace period, the one-off tag, further excluded tags, the
   first month the usual month may use, and your own spending groups (`config.example.toml`).
-- `moth-now status` (no amounts) and `moth-now check FROM TO` for cross-checking against a
+- `monarch-now status` (no amounts) and `monarch-now check FROM TO` for cross-checking against a
   Monarch report.
 
 ### Around it

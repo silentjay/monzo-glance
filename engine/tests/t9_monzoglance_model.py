@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-# T9: the moth-now model against an INDEPENDENT ORACLE, on synthetic data, with mutants.
+# T9: the monzo-glance model against an INDEPENDENT ORACLE, on synthetic data, with mutants.
 #
-#   t9_moth_model.py <engine dir>            # the directory that holds mothnow/
+#   t9_monzoglance_model.py <engine dir>            # the directory that holds monzoglance/
 #       (run it with a python that has engine/requirements.txt installed: one check needs the
 #        pinned graphql-core)
 #
@@ -13,7 +13,7 @@
 # THE ORACLE (below, `Oracle`) recomputes every number and every string on the card from the
 # raw fixture with DIFFERENT CODE: Fractions instead of Decimals, plain loops over the raw
 # transactions instead of the model's per-month tables, and its own formatting. It imports
-# nothing from mothnow. The hand-pinned strings in `pinned_cases` were typed from arithmetic
+# nothing from monzoglance. The hand-pinned strings in `pinned_cases` were typed from arithmetic
 # done by hand, so a bug shared by the model and the oracle still has to get past those.
 #
 # Two rules checked in EVERY scenario besides the oracle:
@@ -197,7 +197,7 @@ def mini(now, txns, window_start, recurring=(), accounts=None):
 
 
 # ----------------------------------------------------------------------------------------------
-# The oracle. Fractions, plain loops, its own formatting. Imports nothing from mothnow.
+# The oracle. Fractions, plain loops, its own formatting. Imports nothing from monzoglance.
 # ----------------------------------------------------------------------------------------------
 def o_round(x):
     """Whole dollars, ties away from zero."""
@@ -439,7 +439,7 @@ class Oracle:
         if age > 3 * 3600:
             return "stale"
         if self.d <= self.grace:
-            return "plain"                              # days 1..grace: a neutral butterfly
+            return "plain"                              # days 1..grace: a neutral pound sign
         return {"over": "over", "under": "good", "at": "good"}.get(state, "plain")
 
 
@@ -633,17 +633,17 @@ def dig(doc, path):
 def check(engine_dir):
     """Run every check against the package in engine_dir. Returns the list of failures."""
     sys.path.insert(0, engine_dir)
-    for name in [n for n in sys.modules if n == "mothnow" or n.startswith("mothnow.")]:
+    for name in [n for n in sys.modules if n == "monzoglance" or n.startswith("monzoglance.")]:
         del sys.modules[name]
-    model = importlib.import_module("mothnow.model")
-    adapter = importlib.import_module("mothnow.adapter")
+    model = importlib.import_module("monzoglance.model")
+    adapter = importlib.import_module("monzoglance.adapter")
     fails = []
 
     def need(ok, what):
         if not ok:
             fails.append(what)
 
-    need(ord(model.GLYPH) == 0xF1589 and ord(model.BROKEN_GLYPH) == 0xF0338 and model.GLYPH != model.BROKEN_GLYPH, "glyphs")
+    need(ord(model.GLYPH) == 0xF01AE and ord(model.BROKEN_GLYPH) == 0xF0338 and model.GLYPH != model.BROKEN_GLYPH, "glyphs")
 
     for name, snap, now in scenarios():
         oracle = Oracle(snap, now)
@@ -658,7 +658,7 @@ def check(engine_dir):
             got_card["banner_text"] = ""
         for d in diff(got_card, want_card, "card")[:6]:
             fails.append("%s: %s" % (name, d))
-        need(got["text"] == model.GLYPH, "%s: a live or stale document must carry the butterfly" % name)
+        need(got["text"] == model.GLYPH, "%s: a live or stale document must carry the pound sign" % name)
         fails.extend("%s: %s" % (name, f) for f in wording_rules(got, now))
         tip = got["tooltip"].split("\n")
         need(got["card"]["hero"]["total_text"] + " spent this month" in tip, "%s: tooltip lacks the total" % name)
@@ -703,7 +703,7 @@ def check(engine_dir):
                 got = "<missing>"
             need(got == value, "pinned/%s: %s is %r, expected %r" % (name, path, got, value))
 
-    # age: stale keeps the butterfly and says so; too old is BROKEN and never a butterfly
+    # age: stale keeps the pound sign and says so; too old is BROKEN and never a pound sign
     name, snap, now = scenarios()[0]
     old = dict(snap, fetched_at=now.timestamp() - 40 * 3600)
     doc = model.build_doc(old, now, "Monzo could not be reached")
@@ -716,8 +716,8 @@ def check(engine_dir):
         need((doc["text"] == model.BROKEN_GLYPH) == (doc["face"]["state"] == "broken"), "age %.1f h: glyph and state disagree" % hours)
     doc = model.build_doc(dict(snap, fetched_at=now.timestamp() - 2 * 3600), now, "Monzo could not be reached")
     need(doc["face"]["state"] in ("good", "over") and "Last check failed (Monzo could not be reached)" in doc["card"]["banner_text"], "a failed check behind fresh data must be said on the card")
-    b = model.broken_doc("Not signed in", "Sign in: run `moth-now login` in a terminal.")
-    need(b["text"] == model.BROKEN_GLYPH and b["face"]["state"] == "broken" and "Not signed in" in b["tooltip"] and "moth-now login" in b["tooltip"], "broken_doc")
+    b = model.broken_doc("Not signed in", "Sign in: run `monzo-glance login` in a terminal.")
+    need(b["text"] == model.BROKEN_GLYPH and b["face"]["state"] == "broken" and "Not signed in" in b["tooltip"] and "monzo-glance login" in b["tooltip"], "broken_doc")
 
     # THE GRACE PERIOD: on days 1..N the face is plain whatever the pace; the card keeps its
     # numbers and its own tint and says from which day the bar takes a color. Usual by any of
@@ -739,7 +739,7 @@ def check(engine_dir):
         doc = json.loads(json.dumps(model.build_doc(snap_g, now_g, "", grace)))
         tag = "grace %d, day %d, %s: " % (grace, day, amount)
         need(doc["face"]["state"] == want_face, tag + "face %r, expected %r" % (doc["face"]["state"], want_face))
-        need(doc["text"] == model.GLYPH, tag + "the butterfly must stay a butterfly")
+        need(doc["text"] == model.GLYPH, tag + "the pound sign must stay a pound sign")
         want_pace = ("\u25b2 £100 over a usual day %d" if want_pace == "OVERDAY" else "\u25bc £990 under a usual day %d") % day
         need(doc["card"]["hero"]["pace_dir"] == want_dir and doc["card"]["hero"]["pace_text"] == want_pace and doc["card"]["chart"]["dir"] == want_dir,
              tag + "the card must keep its numbers and its tint: %r %r" % (doc["card"]["hero"]["pace_dir"], doc["card"]["hero"]["pace_text"]))
@@ -764,7 +764,7 @@ def check(engine_dir):
 
     # THE CONFIGURABLE PARTS: the one-off tag, more excluded tags, the groups. Each is held against
     # the oracle given the same setting; a few strings are pinned by hand.
-    groups_mod = importlib.import_module("mothnow.groups")
+    groups_mod = importlib.import_module("monzoglance.groups")
     name, snap, now = scenarios()[0]
     default_doc = json.loads(json.dumps(model.build_doc(snap, now, "")))
 
@@ -992,7 +992,7 @@ MUTANTS = [
     ("default grace is zero", "model.py", "PACE_GRACE_DAYS = 3 ", "PACE_GRACE_DAYS = 0 "),
     ("stale threshold moved to 30 h", "model.py", "STALE_AFTER = 3 * 3600", "STALE_AFTER = 30 * 3600"),
     ("data older than 36 h still painted", "model.py", "    if age > BROKEN_AFTER:\n        return broken_doc(", "    if False:\n        return broken_doc("),
-    ("the broken document carries the butterfly", "model.py", '    return {"v": 1, "text": BROKEN_GLYPH, "face": {"state": "broken", "reason": reason},', '    return {"v": 1, "text": GLYPH, "face": {"state": "broken", "reason": reason},'),
+    ("the broken document carries the pound sign", "model.py", '    return {"v": 1, "text": BROKEN_GLYPH, "face": {"state": "broken", "reason": reason},', '    return {"v": 1, "text": GLYPH, "face": {"state": "broken", "reason": reason},'),
     ("whole dollars rounded half-even", "fmt.py", 'q = Decimal(value).quantize(Decimal("1"), rounding=ROUND_HALF_UP)\n    return q + 0', 'q = Decimal(value).quantize(Decimal("1"))\n    return q + 0'),
     ("negative amounts lose their sign", "fmt.py", '    return "%s%s%s" % (MINUS if q < 0 else "", CURRENCY, "{:,}".format(abs(int(q))))', '    return "%s%s%s" % ("", CURRENCY, "{:,}".format(abs(int(q))))'),
     ("a category moved to another group", "groups.py", '    "transport": "Transport",', '    "transport": "Groceries",'),
@@ -1009,7 +1009,7 @@ MUTANTS = [
 
 def main():
     if len(sys.argv) < 2:
-        print("usage: t9_moth_model.py <engine dir>")
+        print("usage: t9_monzoglance_model.py <engine dir>")
         return 2
     if sys.argv[1] == "--check":
         fails = check(os.path.abspath(sys.argv[2]))
@@ -1039,8 +1039,8 @@ def main():
     for name, fname, old, new in MUTANTS:
         tmp = tempfile.mkdtemp(prefix="t9-mutant-")
         try:
-            shutil.copytree(os.path.join(engine, "mothnow"), os.path.join(tmp, "mothnow"), ignore=shutil.ignore_patterns("__pycache__"))
-            path = os.path.join(tmp, "mothnow", fname)
+            shutil.copytree(os.path.join(engine, "monzoglance"), os.path.join(tmp, "monzoglance"), ignore=shutil.ignore_patterns("__pycache__"))
+            path = os.path.join(tmp, "monzoglance", fname)
             src = open(path, encoding="utf-8").read()
             if src.count(old) != 1 or old == new:
                 print("  ERROR mutant %r did not apply (%d matches)" % (name, src.count(old)))

@@ -2,10 +2,10 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import qs.Commons
 
-// Moth's hover card: hero · chart · one note · up to three chips · one segmented bar · group
+// Monzo Glance's hover card: hero · chart · one note · up to three chips · one segmented bar · group
 // rows in tabular columns · a footer.
 //
-// Every string here is a whole field from the engine (moth-now, model.py). This file does no
+// Every string here is a whole field from the engine (monzo-glance, model.py). This file does no
 // arithmetic on money and builds no text. Its only sums are pixels: a normalised chart point
 // times the plot's size, a weight ratio times the bar's width.
 //

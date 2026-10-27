@@ -1,14 +1,14 @@
 """Files this engine owns: the snapshot cache, the fetch state, the lock and the log.
 
-    ~/.cache/moth-now/            0700
+    ~/.cache/monzo-glance/            0700
         snapshot.json                0600   the last good fetch, normalised (adapter.py's shape)
         ledger.json                  0600   every transaction ever seen, by id (Monzo's 90-day
                                             window makes a persistent ledger necessary)
         state.json                   0600   last attempt, last error class, counters
         lock                                non-blocking flock: a slow fetch is never stacked on
-    ~/.config/moth-now/config.toml       optional, hand-written (config.example.toml).
+    ~/.config/monzo-glance/config.toml       optional, hand-written (config.example.toml).
                                             Read only; this engine never writes it.
-    ~/.local/state/moth-now/log   0600   one line per event. NO dollar amounts, no merchant or
+    ~/.local/state/monzo-glance/log   0600   one line per event. NO dollar amounts, no merchant or
                                             category names, no cookie material: times, counts,
                                             durations and error classes only.
 """
@@ -23,12 +23,12 @@ LOG_KEEP_LINES = 500
 
 def cache_dir():
     base = os.environ.get("XDG_CACHE_HOME") or os.path.expanduser("~/.cache")
-    return os.path.join(base, "moth-now")
+    return os.path.join(base, "monzo-glance")
 
 
 def state_dir():
     base = os.environ.get("XDG_STATE_HOME") or os.path.expanduser("~/.local/state")
-    return os.path.join(base, "moth-now")
+    return os.path.join(base, "monzo-glance")
 
 
 def _ensure(path):
@@ -39,7 +39,7 @@ def _ensure(path):
 
 def config_path():
     base = os.environ.get("XDG_CONFIG_HOME") or os.path.expanduser("~/.config")
-    return os.path.join(base, "moth-now", "config.toml")
+    return os.path.join(base, "monzo-glance", "config.toml")
 
 
 def snapshot_path():
