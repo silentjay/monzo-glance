@@ -13,4 +13,4 @@ Iron rule: the engine formats, the painter paints. Python does all math and all 
 QML multiplies a ratio by a pixel width and nothing else.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.5.0"

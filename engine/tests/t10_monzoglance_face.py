@@ -11,7 +11,7 @@
 # What it holds:
 #   face states   live (good/over), plain, stale, broken (no session; refused session; no data;
 #                 data too old; unreadable keyring; corrupt cache), and EMPTY OUTPUT: a crash
-#                 inside the tick prints nothing at all, and so does a launcher without its venv
+#                 inside the tick prints nothing at all, and so does a launcher with no engine
 #   never plausible  the pound sign is on stdout only for live and stale; every broken path carries
 #                 the broken glyph or nothing
 #   fetch gates   at most hourly; a failure retried after 10 min, a refused session after 6 h;
@@ -426,9 +426,12 @@ def check(engine_dir, launcher):
     need(out.getvalue() == "" and rc == 0, "a crash on the tick must print nothing and exit 0 (stdout %r, rc %r)" % (out.getvalue()[:40], rc))
     w.close()
     if launcher:
-        empty = tempfile.mkdtemp(prefix="t10-nohome-")
-        p = subprocess.run(["bash", launcher], capture_output=True, text=True, timeout=30, env=dict(os.environ, MONZO_GLANCE_HOME=empty))
-        need(p.stdout == "" and p.returncode != 0, "a launcher without its venv must print nothing on stdout")
+        empty = tempfile.mkdtemp(prefix="t10-noengine-")
+        lonely = os.path.join(empty, "monzo-glance")
+        shutil.copy(launcher, lonely)
+        os.chmod(lonely, 0o755)
+        p = subprocess.run(["bash", lonely], capture_output=True, text=True, timeout=30)
+        need(p.stdout == "" and p.returncode != 0, "a launcher with no engine must print nothing on stdout")
         shutil.rmtree(empty, ignore_errors=True)
     return fails
 

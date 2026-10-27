@@ -52,17 +52,31 @@ hours old, and a **broken-link glyph** when there is nothing trustworthy to show
 ## Install
 
 ```sh
-git clone https://github.com/silentjay/monzo-glance \
-  ~/.config/omarchy/plugins/io.github.silentjay.monzoglance
-cd ~/.config/omarchy/plugins/io.github.silentjay.monzoglance
-./install.sh                  # engine, private venv (hash-pinned), monzo-glance on your PATH
-omarchy-shell io.github.silentjay.monzoglance rescan      # or add it from the Omarchy menu
+omarchy plugin add https://github.com/silentjay/monzo-glance.git --enable
 ```
 
-`install.sh` needs `uv` (Omarchy ships it). Then connect your account:
+The engine is bundled in the plugin folder; there is nothing to build, no venv and no
+packages to install. If you prefer to clone it yourself, put it in
+`~/.config/omarchy/plugins/io.github.silentjay.monzoglance/` and run
+`omarchy-shell shell rescanPlugins`.
+
+Optionally put the `monzo-glance` command on your `PATH` (for `login`, `status` and `check`):
+
+```sh
+cd ~/.config/omarchy/plugins/io.github.silentjay.monzoglance
+./install.sh                  # symlink only: ~/.local/bin/monzo-glance
+```
+
+Then connect your account:
 
 ```sh
 monzo-glance login
+```
+
+Without `install.sh`, run the bundled launcher:
+
+```sh
+~/.config/omarchy/plugins/io.github.silentjay.monzoglance/engine/monzo-glance login
 ```
 
 It asks for the client ID, the client secret and the redirect URI (or take them from the
@@ -112,6 +126,18 @@ tools/open_test.sh             # the click paths, with nothing launched
 `tools/demo.py` paints the widget with an invented household (no Monzo account needed); see its
 `--help` for the `omarchy-shell io.github.silentjay.monzoglance fixture …` scenes.
 
+## Uninstall
+
+```sh
+monzo-glance logout        # revoke the Monzo token and clear the keyring
+omarchy plugin remove io.github.silentjay.monzoglance
+rm -f ~/.local/bin/monzo-glance
+rm -rf ~/.cache/monzo-glance ~/.local/state/monzo-glance
+# optional: rm -rf ~/.config/monzo-glance
+```
+
+If you skipped `install.sh`, there is no `~/.local/bin` link to remove.
+
 ## What Monzo Glance does *not* do (yet)
 
 - **HSBC.** Monzo's API sees Monzo only. Adding HSBC means an aggregator with an HTTPS callback;
@@ -121,4 +147,5 @@ tools/open_test.sh             # the click paths, with nothing launched
 ## Credits
 
 Pupa by [Nathan Kramm](https://github.com/nathankramm/omarchy-monarch-money) (MIT). Monzo access
-via [`Monzo-API`](https://github.com/petermcd/monzo-api) by Peter McDonald (MIT). Monzo Glance is MIT.
+via [`Monzo-API`](https://github.com/petermcd/monzo-api) by Peter McDonald (MIT), vendored in
+`engine/monzo/` at version 1.3.6. Monzo Glance is MIT.

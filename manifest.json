@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "io.github.silentjay.monzoglance",
   "name": "Monzo Glance",
-  "version": "0.1.0",
+  "version": "0.5.0",
   "author": "silentjay",
   "license": "MIT",
   "description": "Monzo in your bar: this month's spending pace against your usual month, as a pound sign. Read-only, unofficial. A UK (GBP) fork of Pupa.",
@@ -25,7 +25,7 @@
     "allowMultiple": false,
     "defaultSection": "center",
     "defaults": {
-      "faceExec": "~/.local/bin/monzo-glance",
+      "faceExec": "",
       "faceInterval": 300,
       "faceHover": "card",
       "faceTint": true
@@ -35,8 +35,8 @@
         "key": "faceExec",
         "type": "string",
         "label": "Engine command",
-        "description": "The command run on every tick. Its last stdout line is the whole display: the glyph, the face state and every string on the card.",
-        "defaultValue": "~/.local/bin/monzo-glance"
+        "description": "The command run on every tick. Leave blank to use the engine shipped with the plugin. Its last stdout line is the whole display: the glyph, the face state and every string on the card.",
+        "defaultValue": ""
       },
       {
         "key": "faceInterval",

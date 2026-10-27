@@ -36,9 +36,13 @@ BarWidget {
   readonly property string unavailableText: "Monzo feed unavailable: monzo-glance printed nothing it could read."
 
   // ---- settings (shell.json entry; manifest.json declares them)
+  readonly property string bundledExec: {
+    var path = decodeURIComponent(String(Qt.resolvedUrl("engine/monzo-glance")).replace(/^file:\/\//, ""))
+    return "'" + path.replace(/'/g, "'\\''") + "'"
+  }
   readonly property string faceExec: {
-    var v = root.setting("faceExec", "~/.local/bin/monzo-glance")
-    return typeof v === "string" ? v.trim() : ""
+    var v = root.setting("faceExec", "")
+    return typeof v === "string" && v.trim() !== "" ? v.trim() : root.bundledExec
   }
   readonly property int faceInterval: {
     var v = Number(root.setting("faceInterval", 300))

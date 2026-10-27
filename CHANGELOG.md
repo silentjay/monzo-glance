@@ -3,7 +3,15 @@
 All notable changes to Monzo Glance (a UK/GBP fork of Pupa) are recorded here. Versions follow
 [Semantic Versioning](https://semver.org/).
 
-## Unreleased
+## v0.5.0 (2026-10-27)
+
+### Changed
+- Renamed **Moth** to **Monzo Glance**: plugin id `io.github.silentjay.monzoglance`, engine command
+  `monzo-glance`, package `monzoglance`, and new config/cache/state paths. The bar glyph is now a
+  pound sign.
+- The engine is now self-contained: `Monzo-API` 1.3.6 (MIT, pure standard library) is vendored in
+  `engine/monzo/`, so there is no venv, no `uv`, and no install step. `omarchy plugin add` gives a
+  working widget; `install.sh` only symlinks the CLI onto your `PATH`.
 
 ### Added
 - **The Account view**, a second page in the same hover card: the current account's balance,
