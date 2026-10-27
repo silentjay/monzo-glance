@@ -2,10 +2,10 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import qs.Commons
 
-// Pupa's hover card: hero · chart · one note · up to three chips · one segmented bar · group
+// Moth's hover card: hero · chart · one note · up to three chips · one segmented bar · group
 // rows in tabular columns · a footer.
 //
-// Every string here is a whole field from the engine (monarch-now, model.py). This file does no
+// Every string here is a whole field from the engine (moth-now, model.py). This file does no
 // arithmetic on money and builds no text. Its only sums are pixels: a normalised chart point
 // times the plot's size, a weight ratio times the bar's width.
 //
@@ -24,8 +24,14 @@ Item {
   property string fontFamily: Style.font.family
   property int cardWidth: Style.space(428)   // + the popup's insets = 460 on screen
 
+  // "month" is the spending card; "account" is balances, pots and the last seven days. The switch
+  // is only drawn when the engine sent an account view (it does not when there is no snapshot).
+  property string view: "month"
+  property var account: null
+
   signal openRequested()
-  // True while the pointer is on the "Open Monarch" button (status only: the gesture test
+  signal viewRequested(string view)
+  // True while the pointer is on the "Open Monzo" button (status only: the gesture test
   // uses it to know its click will land on the button).
   readonly property bool openHovered: openArea.containsMouse
 
@@ -47,10 +53,61 @@ Item {
 
   width: parent ? parent.width : cardWidth
   implicitWidth: cardWidth
-  implicitHeight: column.implicitHeight
+  readonly property int headerHeight: account ? switchRow.height + Style.space(8) : 0
+  implicitHeight: headerHeight + (view === "account" && account ? accountCard.implicitHeight : column.implicitHeight)
+
+  // ---- the two views: Month (spending pace) and Account (balances, pots, last seven days)
+  Item {
+    id: switchRow
+    width: parent.width
+    height: account ? switchText.implicitHeight + Style.space(6) : 0
+
+    Row {
+      id: switchText
+      spacing: Style.space(14)
+
+      Text {
+        textFormat: Text.PlainText
+        text: "Month"
+        color: hc.view === "month" ? hc.foreground : hc.faint
+        font.family: hc.fontFamily
+        font.pixelSize: Style.font.caption
+        font.bold: hc.view === "month"
+        font.underline: hc.view === "month"
+        MouseArea { anchors.fill: parent; anchors.margins: -Style.space(4); hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+          onClicked: hc.viewRequested("month") }
+      }
+
+      Text {
+        visible: hc.account !== null
+        textFormat: Text.PlainText
+        text: "Account"
+        color: hc.view === "account" ? hc.foreground : hc.faint
+        font.family: hc.fontFamily
+        font.pixelSize: Style.font.caption
+        font.bold: hc.view === "account"
+        font.underline: hc.view === "account"
+        MouseArea { anchors.fill: parent; anchors.margins: -Style.space(4); hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+          onClicked: hc.viewRequested("account") }
+      }
+    }
+  }
+
+  AccountCard {
+    id: accountCard
+    visible: hc.view === "account" && hc.account !== null
+    y: hc.headerHeight
+    doc: visible ? hc.account : null
+    host: hc.host
+    foreground: hc.foreground
+    fontFamily: hc.fontFamily
+    onOpenRequested: hc.openRequested()
+  }
 
   Column {
     id: column
+    y: hc.headerHeight
+    visible: hc.view !== "account"
     width: parent.width
     spacing: Style.space(6)
 
@@ -443,7 +500,7 @@ Item {
 
     Rectangle { width: parent.width; height: 1; color: Util.alpha(hc.foreground, 0.18) }
 
-    // ---- footer: the next bill and the door to Monarch; then what is still due, and the two clocks
+    // ---- footer: the next bill and the door to Monzo; then what is still due, and the two clocks
     Item {
       width: parent.width
       height: Math.max(footLeft.implicitHeight, openLink.height)

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # T10: the bar tick end to end — face states, the fetch gates, the files, the silence.
 #
-#   t10_monarch_face.py <engine dir> [<launcher>]
+#   t10_moth_face.py <engine dir> [<launcher>]
 #
 # The real cli.tick() runs with its cache and state under a temp XDG dir, a pinned clock, and two
 # seams replaced on the modules: adapter.fetch_snapshot (no network) and secret.load (no keyring).
@@ -50,7 +50,7 @@ def mode(path):
 
 def check(engine_dir, launcher):
     sys.path.insert(0, HERE)
-    import t9_monarch_model as t9
+    import t9_moth_model as t9
     sys.path.insert(0, engine_dir)
     fails = []
 
@@ -62,17 +62,17 @@ def check(engine_dir, launcher):
         """A fresh engine with empty dirs; fetch and keyring seams counted and steerable."""
 
         def __init__(self):
-            self.tmp = tempfile.mkdtemp(prefix="t10-monarch-")
+            self.tmp = tempfile.mkdtemp(prefix="t10-moth-")
             os.environ["XDG_CACHE_HOME"] = os.path.join(self.tmp, "cache")
             os.environ["XDG_STATE_HOME"] = os.path.join(self.tmp, "state")
             os.environ["XDG_CONFIG_HOME"] = os.path.join(self.tmp, "config")
-            for name in [n for n in sys.modules if n == "monarchnow" or n.startswith("monarchnow.")]:
+            for name in [n for n in sys.modules if n == "mothnow" or n.startswith("mothnow.")]:
                 del sys.modules[name]
-            self.cli = importlib.import_module("monarchnow.cli")
-            self.adapter = importlib.import_module("monarchnow.adapter")
-            self.secret = importlib.import_module("monarchnow.secret")
-            self.store = importlib.import_module("monarchnow.store")
-            self.model = importlib.import_module("monarchnow.model")
+            self.cli = importlib.import_module("mothnow.cli")
+            self.adapter = importlib.import_module("mothnow.adapter")
+            self.secret = importlib.import_module("mothnow.secret")
+            self.store = importlib.import_module("mothnow.store")
+            self.model = importlib.import_module("mothnow.model")
             self.fetches = 0
             self.lookups = 0
             self.session = dict(COOKIES)
@@ -102,7 +102,7 @@ def check(engine_dir, launcher):
 
         def config(self, text):
             """Write the engine's config file as given (a string), or remove it (None)."""
-            path = os.path.join(self.tmp, "config", "monarch-now", "config.toml")
+            path = os.path.join(self.tmp, "config", "moth-now", "config.toml")
             if text is None:
                 if os.path.exists(path):
                     os.unlink(path)
@@ -131,14 +131,19 @@ def check(engine_dir, launcher):
     doc = w.tick(t0)
     need(w.fetches == 1, "a cold start must fetch once (fetched %d)" % w.fetches)
     need(face(doc) in ("good", "over") and doc["text"] == w.model.GLYPH, "live: face %r" % face(doc))
-    need(set(doc) == {"v", "text", "tooltip", "face", "card"}, "the document's keys: %r" % sorted(doc))
+    need(set(doc) == {"v", "text", "tooltip", "face", "card", "account"}, "the document's keys: %r" % sorted(doc))
+    need(set(doc["account"]) == {"title", "checked_text", "balances", "pots_label", "pots", "days_label", "days",
+                                 "empty_text", "open_text"} and doc["account"]["balances"][0]["label"] == "Personal",
+         "the account view's keys: %r" % sorted(doc["account"]))
+    need(all(set(r) == {"time_text", "emoji", "name", "amount_text", "pending"}
+             for d in doc["account"]["days"] for r in d["rows"]), "every account row has the same fields")
     line = json.dumps(doc)
     need("\n" not in line and json.loads(line) == doc, "the document must be one JSON line")
-    cache = os.path.join(w.tmp, "cache", "monarch-now")
+    cache = os.path.join(w.tmp, "cache", "moth-now")
     need(mode(cache) == 0o700, "cache dir mode %o" % mode(cache))
     for f in ("snapshot.json", "state.json", "lock"):
         need(mode(os.path.join(cache, f)) == 0o600, "%s mode %o" % (f, mode(os.path.join(cache, f))))
-    log_path = os.path.join(w.tmp, "state", "monarch-now", "log")
+    log_path = os.path.join(w.tmp, "state", "moth-now", "log")
     need(mode(log_path) == 0o600, "log mode %o" % mode(log_path))
 
     # ---- 2. the hourly gate
@@ -164,7 +169,7 @@ def check(engine_dir, launcher):
     w.fail = "network"
     base = later(minutes=70)                       # the last good fetch
     doc = w.tick(base + datetime.timedelta(minutes=61))
-    need(w.fetches == 4 and face(doc) in ("good", "over") and "Last check failed (Monarch could not be reached)" in doc["card"]["banner_text"], "a failed check behind fresh data: %r / %r" % (face(doc), doc["card"]["banner_text"]))
+    need(w.fetches == 4 and face(doc) in ("good", "over") and "Last check failed (Monzo could not be reached)" in doc["card"]["banner_text"], "a failed check behind fresh data: %r / %r" % (face(doc), doc["card"]["banner_text"]))
     w.tick(base + datetime.timedelta(minutes=66))
     need(w.fetches == 4, "a failed check must not be retried inside 10 minutes")
     w.tick(base + datetime.timedelta(minutes=72))
@@ -179,7 +184,7 @@ def check(engine_dir, launcher):
     snap = w.store.read_snapshot()
     leaks = [t["amount"].lstrip("-") for t in snap["transactions"][:400] if len(t["amount"]) > 5 and t["amount"].lstrip("-") in log]
     names = [n for n in ("Groceries", "Shopping", "Maple Card", "Birch Checking", "Northlight", "Fernhill", "SESSION-SECRET", "CSRF-SECRET") if n in log]
-    need("$" not in log and not leaks and not names, "the log leaks: dollar=%s amounts=%d names=%r" % ("$" in log, len(leaks), names))
+    need("£" not in log and not leaks and not names, "the log leaks: dollar=%s amounts=%d names=%r" % ("£" in log, len(leaks), names))
     w.close()
 
     # ---- 7. no session: broken, with the sign-in hint, and no hammering of the keyring
@@ -187,7 +192,7 @@ def check(engine_dir, launcher):
     w.session = None
     doc = w.tick(t0)
     need(face(doc) == "broken" and doc["text"] == w.model.BROKEN_GLYPH, "no session must be broken")
-    need("Not signed in" in doc["card"]["banner_text"] and "monarch-now login" in doc["card"]["hint_text"] and "monarch-now login" in doc["tooltip"], "no session must say how to sign in")
+    need("Not connected" in doc["card"]["banner_text"] and "moth-now login" in doc["card"]["hint_text"] and "moth-now login" in doc["tooltip"], "no connection must say how to set up login")
     w.tick(later(minutes=5))
     w.tick(later(hours=5))
     need(w.lookups == 1 and w.fetches == 0, "no session: the keyring must not be asked every tick (asked %d)" % w.lookups)
@@ -203,7 +208,7 @@ def check(engine_dir, launcher):
     w.fail = "auth"
     b = later(hours=5, minutes=1)
     doc = w.tick(b + datetime.timedelta(minutes=61))
-    need(w.fetches == 2 and "signed this session out" in doc["card"]["banner_text"] and "monarch-now login" in doc["card"]["hint_text"], "a refused session must be said, with the hint")
+    need(w.fetches == 2 and "refused the connection" in doc["card"]["banner_text"] and "moth-now login" in doc["card"]["hint_text"], "a refused connection must be said, with the hint")
     w.tick(b + datetime.timedelta(hours=3))
     w.tick(b + datetime.timedelta(hours=6))
     need(w.fetches == 2, "a refused session must not be retried inside 6 h (fetched %d)" % w.fetches)
@@ -215,7 +220,7 @@ def check(engine_dir, launcher):
     w = World()
     w.fail = "auth"
     doc = w.tick(t0)
-    need(face(doc) == "broken" and "signed this session out" in doc["card"]["banner_text"] and "monarch-now login" in doc["card"]["hint_text"], "refused with no data must be broken with the hint")
+    need(face(doc) == "broken" and "refused the connection" in doc["card"]["banner_text"] and "moth-now login" in doc["card"]["hint_text"], "refused with no data must be broken with the hint")
     w.close()
     w = World()
     w.keyring_broken = True
@@ -224,7 +229,7 @@ def check(engine_dir, launcher):
     w.close()
     w = World()
     w.tick(t0)
-    with open(os.path.join(w.tmp, "cache", "monarch-now", "snapshot.json"), "w") as fh:
+    with open(os.path.join(w.tmp, "cache", "moth-now", "snapshot.json"), "w") as fh:
         fh.write('{"fetched_at": "yesterday", "transactions": 7')
     w.fail = "network"
     doc = w.tick(later(minutes=5))
@@ -250,7 +255,7 @@ def check(engine_dir, launcher):
         need(face(doc) == want, tag + "face %r, expected %r" % (face(doc), want))
         need(doc["text"] == chr(0xF1589), tag + "a neutral face is still the butterfly")
         hero = doc["card"]["hero"]
-        need(hero["pace_dir"] == ("over" if over else "good") and "$" in hero["pace_text"] and "$" in hero["detail_text"] and doc["card"]["chart"] is not None,
+        need(hero["pace_dir"] == ("over" if over else "good") and "£" in hero["pace_text"] and "£" in hero["detail_text"] and doc["card"]["chart"] is not None,
              tag + "the card must keep its numbers and tint (pace_dir %r, %r)" % (hero["pace_dir"], hero["pace_text"]))
         need(("bar color from day 4" in doc["card"]["note_text"]) == (day <= 3), tag + "note %r" % doc["card"]["note_text"])
     # the config value is what decides
@@ -327,19 +332,19 @@ def check(engine_dir, launcher):
     doc, cfg, snap, now = tick_with('usual_since = "2025-04"\n')
     need(cfg["problem"] == "" and "usual = Apr–Sep 2025 average" in doc["card"]["note_text"], "usual_since must reach the card (problem %r, note %r)" % (cfg["problem"], doc["card"]["note_text"]))
     like_oracle("usual_since", doc, snap, now, since=(2025, 4))
-    own = ('[[groups]]\nname = "Eating"\ncategories = ["Groceries", "Restaurants & Bars"]\n\n'
-           '[[groups]]\nname = "Wheels"\ncategories = ["Gas"]\n\n[[groups]]\nname = "Everything else"\n')
+    own = ('[[groups]]\nname = "Eating"\ncategories = ["groceries", "eating_out"]\n\n'
+           '[[groups]]\nname = "Wheels"\ncategories = ["transport"]\n\n[[groups]]\nname = "Everything else"\n')
     doc, cfg, snap, now = tick_with(own)
     need(cfg["problem"] == "" and [g["name"] for g in doc["card"]["groups"]] == ["Eating", "Wheels", "Everything else"], "[[groups]] must be the card's rows (problem %r)" % cfg["problem"])
     need(all(c["label"] in ("Eating", "Wheels", "Everything else") for c in doc["card"]["chips"]) and "Eating" in doc["tooltip"], "configured groups must name the chips and the text fallback too")
     like_oracle("[[groups]]", doc, snap, now, order=["Eating", "Wheels", "Everything else"],
-                group_of={"Groceries": "Eating", "Restaurants & Bars": "Eating", "Gas": "Wheels"})
+                group_of={"groceries": "Eating", "eating_out": "Eating", "transport": "Wheels"})
     # a bad value is never used: that key's default stays in force, and the config says why
     for label, text, word in (("one_off_tag not a string", "one_off_tag = 7\n", "one_off_tag"),
                               ("excluded_tags not a list", 'excluded_tags = "Work trip"\n', "excluded_tags"),
                               ("excluded_tags with a blank", 'excluded_tags = ["Work trip", " "]\n', "excluded_tags"),
-                              ("a category in two groups", '[[groups]]\nname = "A"\ncategories = ["Gas"]\n[[groups]]\nname = "B"\ncategories = ["Gas"]\n', "groups"),
-                              ("nine groups", "".join('[[groups]]\nname = "G%d"\n' % i for i in range(9)), "groups"),
+                              ("a category in two groups", '[[groups]]\nname = "A"\ncategories = ["transport"]\n[[groups]]\nname = "B"\ncategories = ["transport"]\n', "groups"),
+                              ("eleven groups", "".join('[[groups]]\nname = "G%d"\n' % i for i in range(11)), "groups"),
                               ("groups not tables", 'groups = ["Food", "Other"]\n', "groups"),
                               ("usual_since in words", 'usual_since = "April 2025"\n', "usual_since"),
                               ("usual_since month 13", 'usual_since = "2025-13"\n', "usual_since"),
@@ -355,7 +360,7 @@ def check(engine_dir, launcher):
     need(cfg["pace_grace_days"] == 3 and cfg["settings"].excluded_tags == ("Work trip",) and "pace_grace_days" in cfg["problem"] and "one_off_tag" in cfg["problem"],
          "a bad key beside good ones: %r" % cfg["problem"])
     like_oracle("a bad key beside good ones", doc, snap, now, excluded=("Work trip",))
-    # `monarch-now status` names the months the usual month uses, and says why a value is not in use
+    # `moth-now status` names the months the usual month uses, and says why a value is not in use
     def status_with(config_text):
         import io
         w = World()
@@ -376,7 +381,7 @@ def check(engine_dir, launcher):
     out = status_with('usual_since = "2025-4"\n')
     need("9 complete months (Jan–Sep 2025)" in out and "none before" not in out and "\nconfig " in out and "usual_since must be a month" in out,
          "status with a bad usual_since must show the default in force and say why: %r" % out)
-    need("$" not in out, "status must print no amounts")
+    need("£" not in out, "status must print no amounts")
     # config.example.toml: as shipped, and with its [[groups]] block uncommented, it IS the defaults
     example = os.path.join(HERE, "..", "..", "config.example.toml")
     need(os.path.exists(example), "config.example.toml must sit at the top of the tree")
@@ -409,7 +414,7 @@ def check(engine_dir, launcher):
     import io
     out, err = io.StringIO(), io.StringIO()
     old = sys.stdout, sys.stderr, sys.argv
-    sys.stdout, sys.stderr, sys.argv = out, err, ["monarch-now"]
+    sys.stdout, sys.stderr, sys.argv = out, err, ["moth-now"]
     try:
         try:
             w.cli.run()
@@ -422,7 +427,7 @@ def check(engine_dir, launcher):
     w.close()
     if launcher:
         empty = tempfile.mkdtemp(prefix="t10-nohome-")
-        p = subprocess.run(["bash", launcher], capture_output=True, text=True, timeout=30, env=dict(os.environ, MONARCH_NOW_HOME=empty))
+        p = subprocess.run(["bash", launcher], capture_output=True, text=True, timeout=30, env=dict(os.environ, MOTH_NOW_HOME=empty))
         need(p.stdout == "" and p.returncode != 0, "a launcher without its venv must print nothing on stdout")
         shutil.rmtree(empty, ignore_errors=True)
     return fails
@@ -477,7 +482,7 @@ MUTANTS = [
     ("wording: British spelling on the card", "model.py", '            parts.append("bar color from day %d" % (grace_days + 1))', '            parts.append("bar colour from day %d" % (grace_days + 1))'),
     ("the snapshot is world-readable", "store.py", "    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)\n    try:\n        with os.fdopen(fd, \"w\", encoding=\"utf-8\") as fh:\n            json.dump(doc, fh)\n        os.chmod(tmp, 0o600)", "    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o644)\n    try:\n        with os.fdopen(fd, \"w\", encoding=\"utf-8\") as fh:\n            json.dump(doc, fh)\n        os.chmod(tmp, 0o644)"),
     ("the cache dir is world-readable", "store.py", "    os.makedirs(path, mode=0o700, exist_ok=True)\n    os.chmod(path, 0o700)", "    os.makedirs(path, mode=0o755, exist_ok=True)\n    os.chmod(path, 0o755)"),
-    ("a corrupt cache is trusted", "store.py", '    if not doc or not isinstance(doc.get("fetched_at"), (int, float)) or not isinstance(doc.get("transactions"), list):\n        return None', '    if not doc:\n        return {"fetched_at": 0, "transactions": [], "accounts": [], "recurring": [], "window_start": "2025-01-01"}'),
+    ("a corrupt cache is trusted", "store.py", '    if not doc or doc.get("schema") != SCHEMA or not isinstance(doc.get("fetched_at"), (int, float)) \\\n            or not isinstance(doc.get("transactions"), list):\n        return None', '    if not doc:\n        return {"schema": SCHEMA, "fetched_at": 0, "transactions": [], "accounts": [], "recurring": [], "pots": [], "window_start": "2025-01-01"}'),
     ("the log records the fetched amounts", "cli.py", '    store.log("fetch", result="ok", transactions=len(snap["transactions"]),', '    store.log("fetch", result="ok", total=sum(float(t["amount"]) for t in snap["transactions"]), first=snap["transactions"][0]["amount"], transactions=len(snap["transactions"]),'),
     ("the log records the cookie", "cli.py", '    start, end = fetch_window(now.date())\n', '    start, end = fetch_window(now.date())\n    store.log("session", cookie=cookies["session_id"])\n'),
 ]
@@ -485,7 +490,7 @@ MUTANTS = [
 
 def main():
     if len(sys.argv) < 2:
-        print("usage: t10_monarch_face.py <engine dir> [<launcher>]")
+        print("usage: t10_moth_face.py <engine dir> [<launcher>]")
         return 2
     if sys.argv[1] == "--check":
         print(json.dumps(check(os.path.abspath(sys.argv[2]), sys.argv[3] if len(sys.argv) > 3 else "")))
@@ -510,8 +515,8 @@ def main():
     for name, fname, old, new in MUTANTS:
         tmp = tempfile.mkdtemp(prefix="t10-mutant-")
         try:
-            shutil.copytree(os.path.join(engine, "monarchnow"), os.path.join(tmp, "monarchnow"), ignore=shutil.ignore_patterns("__pycache__"))
-            path = os.path.join(tmp, "monarchnow", fname)
+            shutil.copytree(os.path.join(engine, "mothnow"), os.path.join(tmp, "mothnow"), ignore=shutil.ignore_patterns("__pycache__"))
+            path = os.path.join(tmp, "mothnow", fname)
             src = open(path, encoding="utf-8").read()
             if src.count(old) != 1 or old == new:
                 print("  ERROR mutant %r did not apply (%d matches)" % (name, src.count(old)))

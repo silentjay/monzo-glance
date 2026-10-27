@@ -1,12 +1,14 @@
 """Files this engine owns: the snapshot cache, the fetch state, the lock and the log.
 
-    ~/.cache/monarch-now/            0700
+    ~/.cache/moth-now/            0700
         snapshot.json                0600   the last good fetch, normalised (adapter.py's shape)
+        ledger.json                  0600   every transaction ever seen, by id (Monzo's 90-day
+                                            window makes a persistent ledger necessary)
         state.json                   0600   last attempt, last error class, counters
         lock                                non-blocking flock: a slow fetch is never stacked on
-    ~/.config/monarch-now/config.toml       optional, hand-written (config.example.toml).
+    ~/.config/moth-now/config.toml       optional, hand-written (config.example.toml).
                                             Read only; this engine never writes it.
-    ~/.local/state/monarch-now/log   0600   one line per event. NO dollar amounts, no merchant or
+    ~/.local/state/moth-now/log   0600   one line per event. NO dollar amounts, no merchant or
                                             category names, no cookie material: times, counts,
                                             durations and error classes only.
 """
@@ -21,12 +23,12 @@ LOG_KEEP_LINES = 500
 
 def cache_dir():
     base = os.environ.get("XDG_CACHE_HOME") or os.path.expanduser("~/.cache")
-    return os.path.join(base, "monarch-now")
+    return os.path.join(base, "moth-now")
 
 
 def state_dir():
     base = os.environ.get("XDG_STATE_HOME") or os.path.expanduser("~/.local/state")
-    return os.path.join(base, "monarch-now")
+    return os.path.join(base, "moth-now")
 
 
 def _ensure(path):
@@ -37,7 +39,7 @@ def _ensure(path):
 
 def config_path():
     base = os.environ.get("XDG_CONFIG_HOME") or os.path.expanduser("~/.config")
-    return os.path.join(base, "monarch-now", "config.toml")
+    return os.path.join(base, "moth-now", "config.toml")
 
 
 def snapshot_path():
@@ -46,6 +48,10 @@ def snapshot_path():
 
 def state_path():
     return os.path.join(cache_dir(), "state.json")
+
+
+def ledger_path():
+    return os.path.join(cache_dir(), "ledger.json")
 
 
 def read_json(path):
@@ -76,8 +82,10 @@ def write_json_private(path, doc):
 
 
 def read_snapshot():
+    from .adapter import SCHEMA
     doc = read_json(snapshot_path())
-    if not doc or not isinstance(doc.get("fetched_at"), (int, float)) or not isinstance(doc.get("transactions"), list):
+    if not doc or doc.get("schema") != SCHEMA or not isinstance(doc.get("fetched_at"), (int, float)) \
+            or not isinstance(doc.get("transactions"), list):
         return None
     return doc
 

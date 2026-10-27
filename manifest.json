@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "id": "io.github.nathankramm.pupa",
-  "name": "Pupa",
-  "version": "0.2.0",
-  "author": "nathankramm",
+  "id": "io.github.silentjay.moth",
+  "name": "Moth",
+  "version": "0.1.0",
+  "author": "silentjay",
   "license": "MIT",
-  "description": "Monarch Money in your bar: this month's spending pace against your usual month, as a butterfly. Read-only, unofficial.",
+  "description": "Monzo in your bar: this month's spending pace against your usual month, as a butterfly. Read-only, unofficial. A UK (GBP) fork of Pupa.",
   "kinds": [
     "bar-widget"
   ],
@@ -13,19 +13,19 @@
     "barWidget": "BarWidget.qml"
   },
   "barWidget": {
-    "displayName": "Pupa",
-    "description": "This month's spending pace against your usual month, as a butterfly. Hover for the card, click for Monarch. Read-only; unofficial.",
+    "displayName": "Moth",
+    "description": "This month's spending pace against your usual month, as a butterfly. Hover for the card, click for Monzo. Read-only; unofficial.",
     "category": "Info",
     "aliases": [
-      "pupa",
-      "monarch",
+      "moth",
+      "actual",
       "spending",
       "budget"
     ],
     "allowMultiple": false,
     "defaultSection": "center",
     "defaults": {
-      "faceExec": "~/.local/bin/monarch-now",
+      "faceExec": "~/.local/bin/moth-now",
       "faceInterval": 300,
       "faceHover": "card",
       "faceTint": true
@@ -36,13 +36,13 @@
         "type": "string",
         "label": "Engine command",
         "description": "The command run on every tick. Its last stdout line is the whole display: the glyph, the face state and every string on the card.",
-        "defaultValue": "~/.local/bin/monarch-now"
+        "defaultValue": "~/.local/bin/moth-now"
       },
       {
         "key": "faceInterval",
         "type": "number",
         "label": "Tick (seconds)",
-        "description": "How often the engine is run. It reads its cache; it asks Monarch at most once an hour whatever this says.",
+        "description": "How often the engine is run. It reads its cache; it asks Monzo at most once an hour whatever this says.",
         "defaultValue": 300
       },
       {

@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
-# Install (or update) Pupa's engine, monarch-now, from this checkout. Idempotent. No root.
-#   venv      ~/.local/share/monarch-now/venv         built from engine/requirements.txt with
+# Install (or update) Moth's engine, moth-now, from this checkout. Idempotent. No root.
+#   venv      ~/.local/share/moth-now/venv         built from engine/requirements.txt with
 #                                                     --require-hashes (every wheel checked)
-#   package   ~/.local/share/monarch-now/monarchnow   a copy of engine/monarchnow
-#   launcher  ~/.local/bin/monarch-now
+#   package   ~/.local/share/moth-now/mothnow      a copy of engine/mothnow
+#   launcher  ~/.local/bin/moth-now
 # It does not touch shell.json, the keyring, the cache or your config. Run it again after
-# `omarchy plugin update io.github.nathankramm.pupa`.
+# `omarchy plugin update io.github.silentjay.moth`.
 set -euo pipefail
 export LC_ALL=C       # one file order everywhere, so the fingerprint printed below is comparable
 SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/engine"
-DST="$HOME/.local/share/monarch-now"
+DST="$HOME/.local/share/moth-now"
 BIN="$HOME/.local/bin"
 PY="$(command -v "${PYTHON:-python3}" || true)"
 
@@ -19,7 +19,7 @@ PY="$(command -v "${PYTHON:-python3}" || true)"
 
 mkdir -p "$DST" "$BIN"
 if command -v uv >/dev/null 2>&1; then
-  [ -x "$DST/venv/bin/python" ] || uv venv --python "$PY" "$DST/venv" -q
+  [ -x "$DST/venv/bin/python" ] || uv venv --python "${MOTH_PYTHON:-3.13}" "$DST/venv" -q
   uv pip install --python "$DST/venv/bin/python" --require-hashes -r "$SRC/requirements.txt" -q
 else
   [ -x "$DST/venv/bin/python" ] || "$PY" -m venv "$DST/venv"
@@ -27,19 +27,19 @@ else
 fi
 cp "$SRC/requirements.txt" "$DST/requirements.txt"
 
-rm -rf "$DST/monarchnow.new"
-mkdir "$DST/monarchnow.new"
-cp "$SRC"/monarchnow/*.py "$DST/monarchnow.new/"
-rm -rf "$DST/monarchnow.old"
-[ -d "$DST/monarchnow" ] && mv "$DST/monarchnow" "$DST/monarchnow.old"
-mv "$DST/monarchnow.new" "$DST/monarchnow"
-rm -rf "$DST/monarchnow.old"
+rm -rf "$DST/mothnow.new"
+mkdir "$DST/mothnow.new"
+cp "$SRC"/mothnow/*.py "$DST/mothnow.new/"
+rm -rf "$DST/mothnow.old"
+[ -d "$DST/mothnow" ] && mv "$DST/mothnow" "$DST/mothnow.old"
+mv "$DST/mothnow.new" "$DST/mothnow"
+rm -rf "$DST/mothnow.old"
 
-install -m 0755 "$SRC/monarch-now" "$BIN/monarch-now"
+install -m 0755 "$SRC/moth-now" "$BIN/moth-now"
 
-echo "engine:   $DST/monarchnow ($(cd "$DST/monarchnow" && sha256sum ./*.py | sha256sum | cut -c1-16), a hash of the package's file hashes)"
-echo "launcher: $BIN/monarch-now"
-"$DST/venv/bin/python" -c 'import monarchmoney, gql, aiohttp; print("client:   monarchmoneycommunity, gql", gql.__version__, "aiohttp", aiohttp.__version__)'
-command -v secret-tool >/dev/null 2>&1 || echo "note:     secret-tool (libsecret) is not installed; \`monarch-now login\` needs it"
-case ":$PATH:" in *":$BIN:"*) ;; *) echo "note:     $BIN is not on your PATH; run the engine as $BIN/monarch-now" ;; esac
-echo "next:     monarch-now login"
+echo "engine:   $DST/mothnow ($(cd "$DST/mothnow" && sha256sum ./*.py | sha256sum | cut -c1-16), a hash of the package's file hashes)"
+echo "launcher: $BIN/moth-now"
+"$DST/venv/bin/python" -c 'import monzo, importlib.metadata as m; print("client:   Monzo-API", m.version("Monzo-API"))'
+command -v secret-tool >/dev/null 2>&1 || echo "note:     secret-tool (libsecret) is not installed; \`moth-now login\` needs it"
+case ":$PATH:" in *":$BIN:"*) ;; *) echo "note:     $BIN is not on your PATH; run the engine as $BIN/moth-now" ;; esac
+echo "next:     moth-now login"

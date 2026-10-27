@@ -65,7 +65,7 @@ ACTIVE_ACCOUNT_DAYS = 60
 CHART_PAD = Decimal("0.08")
 PACE_GRACE_DAYS = 3           # days 1..N of a month: the butterfly stays neutral (config: pace_grace_days)
 
-OPEN_TEXT = "Open Monarch"    # the card's one control; the widget runs bin/monarch-open
+OPEN_TEXT = "Open Monzo"     # the card's one control; the widget runs bin/moth-open
 
 ZERO = Decimal("0")
 
@@ -407,7 +407,7 @@ def build_card(snapshot, now, grace_days=PACE_GRACE_DAYS, settings=None):
     right.append("checked %s" % (fmt.clock(fetched) if fetched.date() == today else fetched.strftime("%a %H:%M")))
     footer["right_text"] = (" %s " % fmt.DOT).join(right)
     if attention:
-        footer["attention_text"] = "Reconnect in Monarch: %s" % ", ".join(sorted(attention))
+        footer["attention_text"] = "Reconnect in Monzo: %s" % ", ".join(sorted(attention))
 
     card = {"hero": hero, "banner_text": "", "hint_text": "", "chart": chart, "note_text": note_text,
             "chips_label": "Furthest", "chips": chips, "groups": group_rows, "footer": footer,
@@ -434,7 +434,7 @@ def tooltip_text(card, face_state):
         lines += [card["banner_text"], ""]
     hero = card.get("hero")
     if hero:
-        lines.append("Monarch %s %s" % (fmt.DOT, hero["pill_text"]))
+        lines.append("Monzo %s %s" % (fmt.DOT, hero["pill_text"]))
         lines.append("%s %s" % (hero["total_text"], hero["total_label"]))
         if hero["pace_text"]:
             lines.append(hero["pace_text"])
@@ -464,12 +464,92 @@ def tooltip_text(card, face_state):
     return "\n".join(lines)
 
 
+ACCOUNT_DAYS = 7                  # the `Account` view's window: today and the six days before it
+WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+
+
+def _pounds(minor):
+    """Monzo's pence -> pounds, as a Decimal. Only place the /100 happens."""
+    return D(minor) / 100
+
+
+def _day_name(d, today):
+    if d == today:
+        return "Today"
+    if d == today - datetime.timedelta(days=1):
+        return "Yesterday"
+    return "%s %s" % (WEEKDAYS[d.weekday()], fmt.month_day(d))
+
+
+def _row_clock(t):
+    """The transaction's own clock, from the ISO timestamp the adapter stored."""
+    at = t.get("at")
+    if at:
+        try:
+            return fmt.clock(datetime.datetime.fromisoformat(at))
+        except ValueError:
+            pass
+    return ""
+
+
+def build_account(snapshot, now):
+    """The `Account` view: balances, pots and the last seven days, as formatted strings.
+
+    Balances are Monzo's own figures, kept in pence by the adapter (balance, balance with pots,
+    spent today). They are never re-derived here, so this view cannot disagree with the app.
+    """
+    today = now.date()
+    start = today - datetime.timedelta(days=ACCOUNT_DAYS - 1)
+    fetched = datetime.datetime.fromtimestamp(snapshot["fetched_at"], now.tzinfo)
+
+    balances = []
+    for a in snapshot.get("accounts", []):
+        if a.get("hidden") or a.get("balance_minor") is None:
+            continue
+        sub = []
+        if a.get("spent_today_minor") is not None:
+            sub.append("spent today %s" % fmt.cents(_pounds(a["spent_today_minor"])))
+        if a.get("total_minor") is not None:
+            sub.append("with pots %s" % fmt.cents(_pounds(a["total_minor"])))
+        balances.append({"label": "Personal", "value_text": fmt.cents(_pounds(a["balance_minor"])),
+                         "sub_text": (" %s " % fmt.DOT).join(sub)})
+
+    pots = [{"name": p.get("name") or "Pot", "value_text": fmt.cents(_pounds(p.get("balance_minor") or 0))}
+            for p in snapshot.get("pots", [])]
+
+    days, by_date = [], {}
+    for t in sorted(snapshot.get("transactions", []),
+                    key=lambda r: (r.get("at") or r["date"], r["id"]), reverse=True):
+        if not (start.isoformat() <= t["date"] <= today.isoformat()):
+            continue
+        day = by_date.get(t["date"])
+        if day is None:
+            day = {"label": _day_name(parse_date(t["date"]), today), "rows": []}
+            by_date[t["date"]] = day
+            days.append(day)
+        day["rows"].append({"time_text": _row_clock(t), "emoji": (t.get("emoji") or "").strip() or "💳",
+                            "name": t.get("name") or "Transaction",
+                            "amount_text": fmt.cents(D(t["amount"])), "pending": bool(t.get("pending"))})
+
+    return {
+        "title": "Account",
+        "checked_text": "checked %s" % (fmt.clock(fetched) if fetched.date() == today else fetched.strftime("%a %H:%M")),
+        "balances": balances,
+        "pots_label": "Pots" if pots else "",
+        "pots": pots,
+        "days_label": "Last %d days" % ACCOUNT_DAYS if days else "",
+        "days": days,
+        "empty_text": "" if days else "No transactions in the last %d days" % ACCOUNT_DAYS,
+        "open_text": OPEN_TEXT,
+    }
+
+
 def broken_doc(reason, hint=""):
     """The whole output when there is nothing trustworthy to paint."""
     card = {"hero": None, "banner_text": reason, "hint_text": hint, "chart": None, "note_text": "",
             "chips_label": "", "chips": [], "groups": [], "footer": None, "open_text": OPEN_TEXT, "unmapped": []}
     return {"v": 1, "text": BROKEN_GLYPH, "face": {"state": "broken", "reason": reason},
-            "tooltip": tooltip_text(card, "broken"), "card": card}
+            "tooltip": tooltip_text(card, "broken"), "card": card, "account": None}
 
 
 def build_doc(snapshot, now, problem="", grace_days=PACE_GRACE_DAYS, settings=None):
@@ -477,8 +557,8 @@ def build_doc(snapshot, now, problem="", grace_days=PACE_GRACE_DAYS, settings=No
     shown on the card whenever the data is being served from cache because of it."""
     age = now.timestamp() - snapshot["fetched_at"]
     if age > BROKEN_AFTER:
-        return broken_doc("Monarch data is %s old%s" % (fmt.age_text(age), (": " + problem) if problem else ""),
-                          "It refreshes by itself once Monarch answers; `monarch-now status` says why it has not.")
+        return broken_doc("Monzo data is %s old%s" % (fmt.age_text(age), (": " + problem) if problem else ""),
+                          "It refreshes by itself once Monzo answers; `moth-now status` says why it has not.")
     card, pace_state = build_card(snapshot, now, grace_days, settings)
     state = face_for(pace_state, age, now.day, grace_days)
     if state == "stale":
@@ -486,4 +566,4 @@ def build_doc(snapshot, now, problem="", grace_days=PACE_GRACE_DAYS, settings=No
     elif problem:
         card["banner_text"] = "Last check failed (%s); showing data from %s ago" % (problem, fmt.age_text(age))
     return {"v": 1, "text": GLYPH, "face": {"state": state, "reason": card["banner_text"]},
-            "tooltip": tooltip_text(card, state), "card": card}
+            "tooltip": tooltip_text(card, state), "card": card, "account": build_account(snapshot, now)}

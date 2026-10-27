@@ -1,19 +1,17 @@
 #!/usr/bin/env bash
-# Optional: create the Monarch web app that a click on the butterfly and the card's
-# "Open Monarch" button open (or focus). Without it they open Monarch in your default browser.
+# Optional: create the Monzo web app that a click on the butterfly and the card's
+# "Open Monzo" button open (or focus). Without it they open Monzo in your default browser.
 #
 # It is an ordinary Omarchy web app, made by Omarchy's own installer:
-#     ~/.local/share/applications/Monarch.desktop      Exec=omarchy-launch-webapp "https://app.monarch.com"
-#     ~/.local/share/icons/hicolor/256x256/apps/monarch.png
-# The icon is Monarch Money's own, downloaded from Monarch at install time. It is not part of
-# this repository. Remove the web app again with `omarchy-webapp-remove Monarch`.
+#     ~/.local/share/applications/Monzo.desktop   Exec=omarchy-launch-webapp "https://web.monzo.com"
+# The site's own icon is fetched by Omarchy. Remove the web app again with
+# `omarchy-webapp-remove Monzo`.
 #
 #   install-webapp.sh           create it (does nothing when it already exists)
 #   install-webapp.sh --force   recreate it
 set -euo pipefail
-NAME="Monarch"
-URL="https://app.monarch.com"
-ICON_URL="https://static.monarch.com/logo512.png"
+NAME="Monzo"
+URL="https://web.monzo.com"
 DESKTOP="$HOME/.local/share/applications/$NAME.desktop"
 
 command -v omarchy-webapp-install >/dev/null 2>&1 ||
@@ -25,9 +23,9 @@ if [[ -e $DESKTOP && ${1:-} != "--force" ]]; then
   exit 0
 fi
 
-# The named icon first; if Monarch has moved it, let Omarchy find the site's icon by itself.
-omarchy-webapp-install "$NAME" "$URL" "$ICON_URL" || omarchy-webapp-install "$NAME" "$URL" ""
+# No bundled icon: let Omarchy pick the site's own icon.
+omarchy-webapp-install "$NAME" "$URL"
 
 [[ -f $DESKTOP ]] || { echo "install-webapp.sh: $DESKTOP was not created" >&2; exit 1; }
 echo "Created the $NAME web app: $DESKTOP"
-echo "The butterfly and \"Open Monarch\" now open or focus it."
+echo "The butterfly and \"Open Monzo\" now open or focus it."

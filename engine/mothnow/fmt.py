@@ -12,32 +12,34 @@ assert (ord(MINUS), ord(UP), ord(DOWN), ord(DOT), ord(NDASH), ord(APPROX)) == (
 
 MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
+CURRENCY = "\u00a3"         # POUND SIGN: Moth is a UK fork (HSBC + Monzo, GBP)
+
 
 def whole(value):
-    """Decimal -> Decimal rounded to whole dollars, half up. Never returns negative zero."""
+    """Decimal -> Decimal rounded to whole pounds, half up. Never returns negative zero."""
     q = Decimal(value).quantize(Decimal("1"), rounding=ROUND_HALF_UP)
     return q + 0 if q != 0 else Decimal("0")
 
 
 def dollars(value):
-    """'$1,234' / '−$45'. Whole dollars."""
+    """'£1,234' / '−£45'. Whole pounds."""
     q = whole(value)
-    return "%s$%s" % (MINUS if q < 0 else "", "{:,}".format(abs(int(q))))
+    return "%s%s%s" % (MINUS if q < 0 else "", CURRENCY, "{:,}".format(abs(int(q))))
 
 
 def dollars_abs(value):
-    """'$1,234' for the magnitude of an already-rounded figure."""
-    return "$" + "{:,}".format(abs(int(whole(value))))
+    """'£1,234' for the magnitude of an already-rounded figure."""
+    return CURRENCY + "{:,}".format(abs(int(whole(value))))
 
 
 def cents(value):
-    """'$41.75', but '$60' when there are no cents. For a bill's own amount."""
+    """'£41.75', but '£60' when there are no pence. For a bill's own amount."""
     q = Decimal(value).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
     sign = MINUS if q < 0 else ""
     q = abs(q)
     if q == q.to_integral_value():
-        return "%s$%s" % (sign, "{:,}".format(int(q)))
-    return "%s$%s" % (sign, "{:,.2f}".format(q))
+        return "%s%s%s" % (sign, CURRENCY, "{:,}".format(int(q)))
+    return "%s%s%s" % (sign, CURRENCY, "{:,.2f}".format(q))
 
 
 def month_day(d):

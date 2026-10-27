@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
-"""The hover gesture test for the Pupa bar widget, run with a virtual pointer (vpointer.py).
+"""The hover gesture test for the Moth bar widget, run with a virtual pointer (vpointer.py).
 
-    gesture_test.py [--click] [--target io.github.nathankramm.pupa] [--x X --y Y]
+    gesture_test.py [--click] [--target io.github.silentjay.moth] [--x X --y Y]
                     [--other-x X] [--other-target PLUGIN_ID]
 
 It MOVES THE REAL CURSOR for about twenty seconds; keep hands off the pointer. The cursor is put
-back where it was. `--click` also runs the two click gestures, which open (or focus) Monarch.
+back where it was. `--click` also runs the two click gestures, which open (or focus) Monzo.
 
-The widget says where its butterfly sits (`omarchy-shell io.github.nathankramm.pupa status`: face_x, face_y),
+The widget says where its butterfly sits (`omarchy-shell io.github.silentjay.moth status`: face_x, face_y),
 so no coordinates are needed on a top bar; --x/--y override them. It works on any data: your
 own, or the invented household (see tools/demo.py):
-    omarchy-shell io.github.nathankramm.pupa fixture "python3 <this checkout>/tools/demo.py under"
+    omarchy-shell io.github.silentjay.moth fixture "python3 <this checkout>/tools/demo.py under"
 
 Gestures, each judged from the widget's own IPC status sampled about eight times a second:
   1 rest on the butterfly        closed -> opening -> open, open within ~0.6 s
@@ -19,10 +19,10 @@ Gestures, each judged from the widget's own IPC status sampled about eight times
   4 fast sweep across            never opens
   5 move to another widget       this card closes (--other-x, default a little to the left; with
                                  --other-target, a hover-card plugin there, that card must open)
-  6 click "Open Monarch"         [--click] the card closes and a Monarch window exists
-  7 click the butterfly          [--click] Monarch is focused (or opened); no second window
+  6 click "Open Monzo"         [--click] the card closes and a Monzo window exists
+  7 click the butterfly          [--click] Monzo is focused (or opened); no second window
 
-Gestures 6 and 7 count a window whose class or title names Monarch: the web app
+Gestures 6 and 7 count a window whose class or title names Monzo: the web app
 (install-webapp.sh) or, without it, the browser tab that the fallback opens.
 """
 import json
@@ -40,7 +40,7 @@ def arg(name, default):
     return type(default)(sys.argv[sys.argv.index(name) + 1]) if name in sys.argv else default
 
 
-TARGET = arg("--target", "io.github.nathankramm.pupa")
+TARGET = arg("--target", "io.github.silentjay.moth")
 OTHER_TARGET = arg("--other-target", "")
 
 
@@ -175,15 +175,15 @@ def main():
     vp(away, "sleep:0.8")
 
     if "--click" in sys.argv:
-        def monarch_windows():
+        def actual_windows():
             cl = json.loads(hypr("clients", "-j") or "[]")
-            return [c for c in cl if "monarch.com__" in (c.get("class") or "") or "monarch" in (c.get("title") or "").lower()]
+            return [c for c in cl if "web.monzo.com__" in (c.get("class") or "") or "actual" in (c.get("title") or "").lower()]
 
         def active():
             w = json.loads(hypr("activewindow", "-j") or "{}")
             return "%s / %s" % (w.get("class") or "", w.get("title") or "")
 
-        before = len(monarch_windows())
+        before = len(actual_windows())
         # 6 the card's own control. It sits at the card's bottom right; the pointer walks up that
         # corner until the widget itself says it is on the button, and only then clicks.
         vp("glide:%d,%d,180" % (X, Y), "sleep:0.9")
@@ -202,19 +202,19 @@ def main():
             vp("glide:%d,%d,40" % (bx, by), "sleep:0.12")
         with Poller() as p:
             vp("glide:%d,%d,60" % (bx, by - 3), "sleep:0.3", "click", "sleep:1.5")
-        wait_for(lambda: len(monarch_windows()) >= max(1, before))
-        wins = monarch_windows()
+        wait_for(lambda: len(actual_windows()) >= max(1, before))
+        wins = actual_windows()
         ok = on_button and len(wins) >= 1 and p.rows[-1][2] is False and (before >= 1 or len(wins) == before + 1)
-        report(6, "click Open Monarch", ok, "pointer on the button: %s; windows before %d, after %d; card open at the end: %s; active: %s" % (
+        report(6, "click Open Monzo", ok, "pointer on the button: %s; windows before %d, after %d; card open at the end: %s; active: %s" % (
             on_button, before, len(wins), p.rows[-1][2], active()))
         # 7 the butterfly itself: focus something else first, then click
         subprocess.run(["hyprctl", "dispatch", "hl.dsp.focus({ window = \"class:^(foot|com.mitchellh.ghostty|Alacritty|kitty)$\" })"], capture_output=True)
         time.sleep(0.5)
         was = active()
         vp("glide:%d,%d,200" % (X, Y), "sleep:0.15", "click", "sleep:1.5", away)
-        wait_for(lambda: "monarch" in active().lower())
-        wins2 = monarch_windows()
-        ok = len(wins2) == max(1, len(wins)) and "monarch" in active().lower()
+        wait_for(lambda: "actual" in active().lower())
+        wins2 = actual_windows()
+        ok = len(wins2) == max(1, len(wins)) and "actual" in active().lower()
         report(7, "click the butterfly", ok, "active before %r, after %r; windows %d (no second one)" % (was, active(), len(wins2)))
 
     vp("move:%d,%d" % home)

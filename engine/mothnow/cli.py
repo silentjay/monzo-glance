@@ -1,21 +1,21 @@
-"""monarch-now: the command the bar runs, and a few verbs for a terminal.
+"""moth-now: the command the bar runs, and a few verbs for a terminal.
 
-    monarch-now                 the bar tick: ONE JSON line on stdout (text, tooltip, face, card).
-                                Fetches from Monarch at most hourly, behind a non-blocking lock;
+    moth-now                    the bar tick: ONE JSON line on stdout (text, tooltip, face, card).
+                                Fetches from Monzo at most hourly, behind a non-blocking lock;
                                 otherwise it reads the cache and recomputes for the current clock.
-    monarch-now --refresh       the same, but fetch now (the IPC refresh / middle click). Floor: 60 s.
-    monarch-now login [--paste] sign in (see login.py)
-    monarch-now logout          forget the session
-    monarch-now status          what the engine knows, WITHOUT amounts
-    monarch-now check [FROM TO] spending over a range by this engine's rule, with what was left
-                                out, to set beside a Monarch report that uses the same filters
-    monarch-now --as-of ISO     compute for a pinned clock from the cache (never fetches)
-    monarch-now --snapshot FILE compute from a snapshot file instead of the cache (never fetches)
+    moth-now --refresh          the same, but fetch now (the IPC refresh / middle click). Floor: 60 s.
+    moth-now login              connect your Monzo account (see login.py)
+    moth-now logout             forget the connection
+    moth-now status             what the engine knows, WITHOUT amounts
+    moth-now check [FROM TO]    spending over a range by this engine's rule, with what was left
+                                out, to set beside your Monzo spending
+    moth-now --as-of ISO        compute for a pinned clock from the cache (never fetches)
+    moth-now --snapshot FILE    compute from a snapshot file instead of the cache (never fetches)
 
 FACE STATES (the bar shows the glyph only, never a number)
     good / over / plain   a butterfly: data no older than 3 h (plain = no usual month yet)
     stale                 a butterfly, greyed: the data is 3 h to 36 h old
-    broken                a broken-link glyph: no session, no data, or data older than 36 h
+    broken                a broken-link glyph: no connection, no data, or data older than 36 h
   The tick ALWAYS prints a document when it can say what is wrong; the widget treats no output,
   unparsable output or an unknown state as broken too. A butterfly is never painted over bad data.
 """
@@ -34,13 +34,13 @@ RETRY_AFTER_AUTH = 6 * 3600    # a refused session is not retried all day; `logi
 REFRESH_FLOOR = 60             # --refresh cannot be turned into a hammer
 
 PROBLEM = {
-    "auth": "Monarch signed this session out",
-    "network": "Monarch could not be reached",
-    "shape": "Monarch's answer changed shape",
+    "auth": "Monzo refused the connection",
+    "network": "Monzo could not be reached",
+    "shape": "Monzo's answer changed shape",
     "keyring": "the keyring could not be read",
-    "no-session": "not signed in",
+    "no-session": "not connected",
 }
-SIGN_IN_HINT = "Sign in: run `monarch-now login` in a terminal."
+SIGN_IN_HINT = "Connect Monzo: run `moth-now login` in a terminal."
 
 
 CONFIG_KEYS = ("pace_grace_days", "one_off_tag", "excluded_tags", "usual_since", "groups")
@@ -48,11 +48,12 @@ USUAL_SINCE = re.compile(r"^(\d{4})-(0[1-9]|1[0-2])$")
 
 
 def load_config():
-    """The optional config file, ~/.config/monarch-now/config.toml (config.example.toml has every key):
+    """The optional config file, ~/.config/moth-now/config.toml (config.example.toml has every key):
         pace_grace_days   whole number 0..31, default 3: on days 1..N of a month the butterfly
                           stays neutral (0 = color from day 1).
-        one_off_tag       the Monarch tag that marks a one-off purchase (default "One-off"): left
-                          out of spending and counted in the card's note. "" = no such tag.
+        one_off_tag       the tag that marks a one-off purchase (default "One-off"): left out of
+                          spending and counted in the card's note. In Monzo, tags live in a
+                          transaction's notes as "#tag". "" = no such tag.
         excluded_tags     more tags whose transactions are left out of spending (default none).
         usual_since       "YYYY-MM": the earliest month the usual month may use (default unset:
                           the newest twelve complete months of the history).
@@ -185,8 +186,8 @@ def tick(now, force=False):
                     snapshot = fresh
     problem = PROBLEM.get(state.get("last_error") or "", "")
     if snapshot is None:
-        why = problem or "no Monarch data yet"
-        hint = SIGN_IN_HINT if state.get("last_error") in ("auth", "no-session", None) else "It retries by itself; `monarch-now status` says more."
+        why = problem or "no Monzo data yet"
+        hint = SIGN_IN_HINT if state.get("last_error") in ("auth", "no-session", None) else "It retries by itself; `moth-now status` says more."
         return model.broken_doc(why[0].upper() + why[1:], hint)
     cfg = load_config()
     doc = model.build_doc(snapshot, now, problem, cfg["pace_grace_days"], cfg["settings"])
@@ -249,16 +250,16 @@ def cmd_status(now):
 
 def cmd_check(args, now):
     """Spending over a range by this engine's rule, with what was left out and why, to set beside
-    a Monarch report that uses the same filters (expense categories, the same tags excluded).
+    a Monzo spending figure that uses the same filters (the same tags excluded).
     Prints dollar figures: for a terminal, not a log."""
     snapshot = store.read_snapshot()
     if not snapshot:
-        sys.stdout.write("monarch-now check: no cached data yet\n")
+        sys.stdout.write("moth-now check: no cached data yet\n")
         return 1
     start = model.parse_date(args[0]) if len(args) > 0 else datetime.date(now.year, 1, 1)
     end = model.parse_date(args[1]) if len(args) > 1 else now.date()
     if start < model.parse_date(snapshot["window_start"]):
-        sys.stdout.write("monarch-now check: the cache starts %s, after %s\n" % (snapshot["window_start"], start))
+        sys.stdout.write("moth-now check: the cache starts %s, after %s\n" % (snapshot["window_start"], start))
         return 1
     settings = load_config()["settings"]
     hidden = {a["id"] for a in snapshot["accounts"] if a.get("hidden")}
@@ -285,14 +286,14 @@ def main(argv=None):
     now = datetime.datetime.now().astimezone()      # the system's own time zone
     if argv[:1] == ["login"]:
         from . import login
-        return login.paste_login() if "--paste" in argv else login.browser_login()
+        return login.configure()
     if argv[:1] == ["logout"]:
         secret.clear()
         state = store.read_state()
         state["last_error"] = "no-session"
         store.write_state(state)
         store.log("logout")
-        sys.stdout.write("The session was removed from the keyring. (Monarch's side ends when it expires.)\n")
+        sys.stdout.write("The Monzo connection was removed from the keyring. (Monzo keeps its own access until you revoke it in the app.)\n")
         return 0
     if argv[:1] == ["status"]:
         return cmd_status(now)
@@ -330,7 +331,7 @@ def run():
     except Exception as e:      # noqa: BLE001
         store.log("crash", error=type(e).__name__)
         if sys.argv[1:2] and sys.argv[1] in VERBS:
-            sys.stderr.write("monarch-now %s failed: %s\n" % (sys.argv[1], type(e).__name__))
+            sys.stderr.write("moth-now %s failed: %s\n" % (sys.argv[1], type(e).__name__))
             sys.exit(1)
         sys.exit(0)
 

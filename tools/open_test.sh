@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# The two ways bin/monarch-open can go, and install-webapp.sh, with nothing real launched:
+# The two ways bin/moth-open can go, and install-webapp.sh, with nothing real launched:
 # the Omarchy helpers, xdg-open and the web app installer are replaced by recorders on PATH,
 # HOME is a temp directory, and PATH holds nothing else of Omarchy's. No network, no browser,
 # and no web app is created for real.
@@ -7,7 +7,8 @@
 #   tools/open_test.sh        exit 0 when every check passes
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-OPEN="$ROOT/bin/monarch-open"
+OPEN="$ROOT/bin/moth-open"
+URL="https://web.monzo.com"
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 fails=0
@@ -24,7 +25,7 @@ cat >"$TMP/bin/omarchy-webapp-install" <<STUB
 #!/usr/bin/env bash
 printf "omarchy-webapp-install" >>"$TMP/calls"; printf " %s" "\$@" >>"$TMP/calls"; echo >>"$TMP/calls"
 mkdir -p "\$HOME/.local/share/applications"
-printf '[Desktop Entry]\nVersion=1.0\nName=%s\nComment=%s\nExec=omarchy-launch-webapp "%s"\nTerminal=false\nType=Application\nIcon=monarch\nStartupNotify=true\n' "\$1" "\$1" "\$2" >"\$HOME/.local/share/applications/\$1.desktop"
+printf '[Desktop Entry]\nVersion=1.0\nName=%s\nComment=%s\nExec=omarchy-launch-webapp "%s"\nTerminal=false\nType=Application\nIcon=monzo\nStartupNotify=true\n' "\$1" "\$1" "\$2" >"\$HOME/.local/share/applications/\$1.desktop"
 STUB
 chmod +x "$TMP"/bin/* "$TMP"/nohelper/*
 # The scripts under test see ONLY the recorders and these few tools: on Omarchy the real
@@ -37,43 +38,43 @@ calls() { cat "$TMP/calls"; }
 
 # ---- 1. no web app installed: the default browser
 run "$TMP/bin:$BASE_PATH" "$OPEN" --print
-check "no web app: --print says browser" "$(cat "$TMP/out")" "browser https://app.monarch.com"
+check "no web app: --print says browser" "$(cat "$TMP/out")" "browser $URL"
 check "no web app: --print opens nothing" "$(calls)" ""
 run "$TMP/bin:$BASE_PATH" "$OPEN"
-check "no web app: xdg-open gets the URL" "$(calls)" "xdg-open https://app.monarch.com"
+check "no web app: xdg-open gets the URL" "$(calls)" "xdg-open $URL"
 check "no web app: exit 0" "$(cat "$TMP/rc")" "0"
 
-# ---- 2. install-webapp.sh creates the web app through Omarchy's installer, icon by URL
+# ---- 2. install-webapp.sh creates the web app through Omarchy's installer
 run "$TMP/bin:$BASE_PATH" "$ROOT/install-webapp.sh"
 check "install-webapp: exit 0" "$(cat "$TMP/rc")" "0"
-check "install-webapp: Omarchy's installer, the icon named by URL" "$(calls)" "omarchy-webapp-install Monarch https://app.monarch.com https://static.monarch.com/logo512.png"
-check "install-webapp: the launcher is the one Omarchy writes" "$(grep '^Exec=' "$TMP/home/.local/share/applications/Monarch.desktop")" 'Exec=omarchy-launch-webapp "https://app.monarch.com"'
+check "install-webapp: Omarchy's installer, the site URL" "$(calls)" "omarchy-webapp-install Monzo $URL"
+check "install-webapp: the launcher is the one Omarchy writes" "$(grep '^Exec=' "$TMP/home/.local/share/applications/Monzo.desktop")" 'Exec=omarchy-launch-webapp "'"$URL"'"'
 run "$TMP/bin:$BASE_PATH" "$ROOT/install-webapp.sh"
 check "install-webapp twice: nothing is reinstalled" "$(calls)" ""
 run "$TMP/bin:$BASE_PATH" "$ROOT/install-webapp.sh" --force
-check "install-webapp --force: reinstalled" "$(calls | cut -d' ' -f1-2)" "omarchy-webapp-install Monarch"
-check "no image is bundled in the repository" "$(cd "$ROOT" && git ls-files 2>/dev/null | grep -i -E 'monarch[^/]*\.(png|svg|ico|jpg)$|logo' || true)" ""
+check "install-webapp --force: reinstalled" "$(calls | cut -d' ' -f1-2)" "omarchy-webapp-install Monzo"
+check "no image is bundled in the repository" "$(cd "$ROOT" && git ls-files 2>/dev/null | grep -i -E 'monzo[^/]*\.(png|svg|ico|jpg)$|monarch|logo' || true)" ""
 
 # ---- 3. web app installed: Omarchy's launch-or-focus helper, by window class
 run "$TMP/bin:$BASE_PATH" "$OPEN" --print
-check "web app: --print says webapp, the class pattern and the URL" "$(cat "$TMP/out")" "webapp app.monarch.com__ https://app.monarch.com"
+check "web app: --print says webapp, the class pattern and the URL" "$(cat "$TMP/out")" "webapp web.monzo.com__ $URL"
 run "$TMP/bin:$BASE_PATH" "$OPEN"
-check "web app: launch-or-focus gets the class pattern and the URL" "$(calls)" "omarchy-launch-or-focus-webapp app.monarch.com__ https://app.monarch.com"
+check "web app: launch-or-focus gets the class pattern and the URL" "$(calls)" "omarchy-launch-or-focus-webapp web.monzo.com__ $URL"
 
 # ---- 4. the URL is read from the launcher, so an edited launcher is followed
-sed -i 's|https://app.monarch.com|https://app.monarch.com/dashboard|' "$TMP/home/.local/share/applications/Monarch.desktop"
+sed -i "s|$URL|$URL/dashboard|" "$TMP/home/.local/share/applications/Monzo.desktop"
 run "$TMP/bin:$BASE_PATH" "$OPEN"
-check "an edited launcher: its URL is used" "$(calls)" "omarchy-launch-or-focus-webapp app.monarch.com__ https://app.monarch.com/dashboard"
+check "an edited launcher: its URL is used" "$(calls)" "omarchy-launch-or-focus-webapp web.monzo.com__ $URL/dashboard"
 
 # ---- 5. a launcher but no Omarchy helper (not on Omarchy), or a launcher that is not a web app
 run "$TMP/nohelper:$BASE_PATH" "$OPEN"
-check "launcher without the Omarchy helper: the browser" "$(calls)" "xdg-open https://app.monarch.com"
-printf '[Desktop Entry]\nName=Monarch\nExec=some-other-app\n' >"$TMP/home/.local/share/applications/Monarch.desktop"
+check "launcher without the Omarchy helper: the browser" "$(calls)" "xdg-open $URL"
+printf '[Desktop Entry]\nName=Monzo\nExec=some-other-app\n' >"$TMP/home/.local/share/applications/Monzo.desktop"
 run "$TMP/bin:$BASE_PATH" "$OPEN"
-check "a Monarch launcher that is not a web app: the browser" "$(calls)" "xdg-open https://app.monarch.com"
+check "a Monzo launcher that is not a web app: the browser" "$(calls)" "xdg-open $URL"
 
 # ---- 6. not on Omarchy at all: install-webapp.sh says so and creates nothing
-rm -f "$TMP/home/.local/share/applications/Monarch.desktop"
+rm -f "$TMP/home/.local/share/applications/Monzo.desktop"
 run "$TMP/nohelper:$BASE_PATH" "$ROOT/install-webapp.sh"
 check "install-webapp without Omarchy: exit 1" "$(cat "$TMP/rc")" "1"
 check "install-webapp without Omarchy: nothing created" "$(ls "$TMP/home/.local/share/applications")" ""

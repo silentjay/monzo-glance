@@ -11,7 +11,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OUT="${1:-$ROOT/docs}"
 mkdir -p "$OUT"
-ipc() { omarchy-shell io.github.nathankramm.pupa "$@"; }
+ipc() { omarchy-shell io.github.silentjay.moth "$@"; }
 st() { ipc status | jq -r "$1"; }
 trap 'ipc hovercard close || true; ipc fixture off || true' EXIT
 
@@ -46,19 +46,19 @@ face() {        # face FILE: the butterfly alone, as it sits on the bar
 }
 
 TMP="$(mktemp -d)"
-scene under;      card pupa-card.png;            OUT="$TMP" face good.png
+scene under;      card moth-card.png;            OUT="$TMP" face good.png
 x=$(st .face_x); y=$(st .face_y)
-grim -g "$((x - 190)),0 380x$((2 * y))" "$OUT/pupa-bar.png"
-scene over;       card pupa-card-over.png;       OUT="$TMP" face over.png
-scene grace;      card pupa-card-grace.png;      OUT="$TMP" face plain.png
-scene stale;      card pupa-card-stale.png;      OUT="$TMP" face stale.png
-scene signed-out; card pupa-card-signed-out.png; OUT="$TMP" face broken.png
+grim -g "$((x - 190)),0 380x$((2 * y))" "$OUT/moth-bar.png"
+scene over;       card moth-card-over.png;       OUT="$TMP" face over.png
+scene grace;      card moth-card-grace.png;      OUT="$TMP" face plain.png
+scene stale;      card moth-card-stale.png;      OUT="$TMP" face stale.png
+scene signed-out; card moth-card-signed-out.png; OUT="$TMP" face broken.png
 
 # the five faces side by side, each named, in the bar's own font when fontconfig can find it
 FONT="$(fc-match -f '%{file}' monospace 2>/dev/null || true)"
 montage -background '#1a1b26' -fill '#a9b1d6' ${FONT:+-font "$FONT"} -pointsize 20 -geometry '160x52+12+10' -tile 5x1 \
   -label 'under / on pace' "$TMP/good.png" -label 'over' "$TMP/over.png" \
   -label 'days 1-3' "$TMP/plain.png" -label 'stale' "$TMP/stale.png" \
-  -label 'broken' "$TMP/broken.png" "$OUT/pupa-faces.png"
+  -label 'broken' "$TMP/broken.png" "$OUT/moth-faces.png"
 rm -rf "$TMP"
-ls -1 "$OUT"/pupa-*.png
+ls -1 "$OUT"/moth-*.png

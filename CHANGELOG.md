@@ -1,13 +1,63 @@
 # Changelog
 
-All notable changes to Pupa are recorded here. Versions follow [Semantic Versioning](https://semver.org/).
+All notable changes to Moth (a UK/GBP fork of Pupa) are recorded here. Versions follow
+[Semantic Versioning](https://semver.org/).
 
-## v0.2.0 (2026-10-06)
+## Unreleased
+
+### Added
+- **The Account view**, a second page in the same hover card: the current account's balance,
+  what you have spent today, the balance with pots, every pot, and the **last seven days** of
+  transactions grouped by day — with merchant names and emoji, the time, and a `pending` marker
+  on unsettled rows. Switch with the `Month` / `Account` labels at the top of the card; hover still
+  opens on `Month`, and nothing about the bar face changes.
+- The snapshot now carries Monzo's own figures for the account (`balance`, `total_balance`,
+  `spend_today`) and its pots (`Pot.fetch`), so the view cannot disagree with the Monzo app by
+  rounding differently. Transaction rows gained `name` (the expanded merchant, else the
+  description) and `at`. The snapshot schema is now **2**; an older cache is refetched once.
+- A balance or pot list Monzo refuses is left out of the view on its own; it never takes the
+  month's card down with it.
+
+### Notes
+- No new polling: the account view rides the same hourly fetch, and the card's `checked` line
+  says when. Middle-click still fetches now.
+- The 7-day list scrolls inside the card when a week is busier than the popup is tall.
+
+## v0.4.0 (2026-10-11)
+
+The fork, landed: Pupa's butterfly, now reading **Monzo** directly instead of Monarch Money.
+
+### Changed
+- The data source is Monzo's own developer API (`engine/mothnow/adapter.py`, via
+  [`Monzo-API`](https://pypi.org/project/Monzo-API/)). No aggregator, no server to run.
+- Money is shown in **£**.
+- `moth-now login` runs a localhost OAuth flow (redirect `http://localhost:8080/callback`); the
+  access and refresh tokens go straight to the keyring. Setup is a Monzo OAuth client you create
+  at developers.monzo.com — no domain, no HTTPS.
+- A **persistent ledger** (`~/.cache/moth-now/ledger.json`): Monzo exposes only the last 90 days
+  except in the five minutes after login, so `login` seeds full history and every fetch upserts
+  the recent window into the ledger, which the usual month is built from.
+- Money in (positive amounts) is not spending; pot moves and internal transfers are excluded by
+  Monzo's own `include_in_spending` flag; declined transactions are dropped.
+- The card's rows are Monzo's categories folded into eight everyday groups by default; a
+  `[[groups]]` block in the config still overrides them.
+- Click opens Monzo in the browser, or the Monzo web app (`https://web.monzo.com`) if installed.
+
+### Removed
+- The Monarch GraphQL client and browser sign-in, and the earlier Actual Budget path (which needed
+  an HTTPS callback for Enable Banking the user had no domain for).
+
+### Notes
+- HSBC is out of scope: Monzo's API sees Monzo only. The planned path to add it is a free
+  Tailscale Funnel URL plus Enable Banking, which the widget verified it can.
+
+
+## v0.2.0 (2026-10-06)   [Pupa]
 
 ### Breaking
 - Plugin ID is now io.github.nathankramm.pupa. If you installed 0.1.0, remove pupa.monarch and add it again.
 
-## v0.1.0 (2026-10-01)
+## v0.1.0 (2026-10-01)   [Pupa]
 
 The first public release: a starting stage.
 
@@ -26,7 +76,7 @@ The first public release: a starting stage.
   signed out, without data, or with data over 36 hours old. A butterfly is never painted over
   bad data.
 
-### The engine (`monarch-now`)
+### The engine (`moth-now`)
 - Read-only by construction and by guard: every GraphQL document is parsed and anything but a
   query is refused before it is sent.
 - Sign-in in a real Chrome or Chromium window with a throwaway profile; the session goes
@@ -36,7 +86,7 @@ The first public release: a starting stage.
   twelve at most.
 - An optional `config.toml`: the grace period, the one-off tag, further excluded tags, the
   first month the usual month may use, and your own spending groups (`config.example.toml`).
-- `monarch-now status` (no amounts) and `monarch-now check FROM TO` for cross-checking against a
+- `moth-now status` (no amounts) and `moth-now check FROM TO` for cross-checking against a
   Monarch report.
 
 ### Around it

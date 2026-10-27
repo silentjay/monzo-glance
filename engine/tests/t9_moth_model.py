@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-# T9: the monarch-now model against an INDEPENDENT ORACLE, on synthetic data, with mutants.
+# T9: the moth-now model against an INDEPENDENT ORACLE, on synthetic data, with mutants.
 #
-#   t9_monarch_model.py <engine dir>            # the directory that holds monarchnow/
+#   t9_moth_model.py <engine dir>            # the directory that holds mothnow/
 #       (run it with a python that has engine/requirements.txt installed: one check needs the
 #        pinned graphql-core)
 #
@@ -13,7 +13,7 @@
 # THE ORACLE (below, `Oracle`) recomputes every number and every string on the card from the
 # raw fixture with DIFFERENT CODE: Fractions instead of Decimals, plain loops over the raw
 # transactions instead of the model's per-month tables, and its own formatting. It imports
-# nothing from monarchnow. The hand-pinned strings in `pinned_cases` were typed from arithmetic
+# nothing from mothnow. The hand-pinned strings in `pinned_cases` were typed from arithmetic
 # done by hand, so a bug shared by the model and the oracle still has to get past those.
 #
 # Two rules checked in EVERY scenario besides the oracle:
@@ -45,25 +45,25 @@ MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "No
 # Fixture
 # ----------------------------------------------------------------------------------------------
 CATS = {
-    "c-groc": ("Groceries", "Food & Dining", "expense"),
-    "c-rest": ("Restaurants & Bars", "Food & Dining", "expense"),
-    "c-shop": ("Shopping", "Shopping", "expense"),
-    "c-gas": ("Gas", "Auto & Transport", "expense"),
-    "c-fun": ("Entertainment & Recreation", "Travel & Lifestyle", "expense"),
-    "c-med": ("Medical", "Health & Wellness", "expense"),
-    "c-kid": ("Child Activities", "Children", "expense"),
-    "c-fin": ("Financial & Legal Services", "Financial", "expense"),
-    "c-elec": ("Gas & Electric", "Bills & Utilities", "expense"),
-    "c-odd": ("Mystery Category", "Other", "expense"),          # not in the group map -> Other
+    "c-groc": ("groceries", "Groceries", "expense"),
+    "c-rest": ("eating_out", "Eating out", "expense"),
+    "c-shop": ("shopping", "Shopping", "expense"),
+    "c-gas": ("transport", "Transport", "expense"),
+    "c-fun": ("entertainment", "Entertainment", "expense"),
+    "c-med": ("holidays", "Holidays", "expense"),
+    "c-kid": ("cash", "Cash", "expense"),
+    "c-fin": ("expenses", "Expenses", "expense"),
+    "c-elec": ("bills", "Bills", "expense"),
+    "c-odd": ("mystery", "General", "expense"),          # not a Monzo category -> the last group
     "c-xfer": ("Transfer", "Transfers", "transfer"),
     "c-ccp": ("Credit Card Payment", "Transfers", "transfer"),
     "c-pay": ("Paychecks", "Income", "income"),
 }
-GROUP_OF = {"Groceries": "Food", "Restaurants & Bars": "Food", "Shopping": "Shopping", "Gas": "Transport",
-            "Entertainment & Recreation": "Fun & travel", "Medical": "Health", "Child Activities": "Kids & education",
-            "Financial & Legal Services": "Other", "Gas & Electric": "Home & utilities"}
-ORDER = ["Food", "Home & utilities", "Shopping", "Fun & travel", "Transport", "Kids & education", "Health", "Other"]
-PALETTE = ["#0072B2", "#56B4E9", "#CC79A7", "#F0E442", "#9085E9", "#D9D9D9", "#7A5FD0", "#9A9A9A"]
+GROUP_OF = {"groceries": "Groceries", "eating_out": "Eating out", "shopping": "Shopping",
+            "transport": "Transport", "entertainment": "Entertainment", "holidays": "Holidays",
+            "cash": "Cash", "expenses": "Expenses", "bills": "Bills"}
+ORDER = ["Groceries", "Eating out", "Shopping", "Transport", "Entertainment", "Holidays", "Cash", "Expenses", "Bills", "General"]
+PALETTE = ["#0072B2", "#56B4E9", "#009E73", "#F0E442", "#CC79A7", "#D9D9D9", "#9085E9", "#7A5FD0", "#8C6D46", "#9A9A9A"]
 
 
 def dim(y, m):
@@ -151,7 +151,8 @@ def make_snapshot(first, last_day, window_start, fetched_at, seed=1335, history_
         if m == 1:
             add(datetime.date(y, 1, 5), "c-fun", 70200)       # a yearly membership
     accounts = [
-        {"id": "a1", "name": "Maple Card", "updated_at": iso(fetched_at - 2 * 3600), "hidden": False, "manual": False, "needs_reconnect": False, "sync_disabled": False},
+        {"id": "a1", "name": "Maple Card", "updated_at": iso(fetched_at - 2 * 3600), "hidden": False, "manual": False, "needs_reconnect": False, "sync_disabled": False,
+         "balance_minor": 168995, "total_minor": 219479, "spent_today_minor": 8912, "currency": "GBP"},
         {"id": "a2", "name": "Birch Checking", "updated_at": iso(fetched_at - 30 * 3600), "hidden": False, "manual": False, "needs_reconnect": True, "sync_disabled": False},
         {"id": "a3", "name": "Hidden Savings", "updated_at": iso(fetched_at - 300 * 3600), "hidden": True, "manual": False, "needs_reconnect": False, "sync_disabled": False},
         {"id": "a4", "name": "Cash Envelope", "updated_at": iso(fetched_at - 900 * 3600), "hidden": False, "manual": True, "needs_reconnect": False, "sync_disabled": False},
@@ -169,8 +170,10 @@ def make_snapshot(first, last_day, window_start, fetched_at, seed=1335, history_
         {"date": nxt.isoformat(), "amount": "-57.0", "name": "Northlight Internet", "is_past": False, "approximate": False},
         {"date": (t - datetime.timedelta(days=1)).isoformat(), "amount": "-31.0", "name": "Yesterday Unmarked", "is_past": False, "approximate": False},
     ]
-    return {"schema": 1, "source": "fixture", "fetched_at": fetched_at, "window_start": window_start.isoformat(),
-            "window_end": last_day.isoformat(), "transactions": txns, "accounts": accounts, "recurring": recurring}
+    return {"schema": 2, "source": "fixture", "fetched_at": fetched_at, "window_start": window_start.isoformat(),
+            "window_end": last_day.isoformat(), "transactions": txns, "accounts": accounts, "recurring": recurring,
+            "pots": [{"id": "p1", "name": "Holiday Pot", "balance_minor": 6156, "goal_minor": 50000, "currency": "GBP"},
+                     {"id": "p2", "name": "Saving Challenge", "balance_minor": 43528, "goal_minor": None, "currency": "GBP"}]}
 
 
 def iso(ts):
@@ -187,14 +190,14 @@ def mini(now, txns, window_start, recurring=(), accounts=None):
         out.append({"id": "m%03d" % i, "date": d, "amount": amount, "category_id": cat, "category": name, "group": group,
                     "group_type": gtype, "tags": sorted(extra.get("tags", ())), "pending": extra.get("pending", False),
                     "hidden": extra.get("hidden", False), "account_id": extra.get("account", "a1")})
-    return {"schema": 1, "source": "mini", "fetched_at": now.timestamp() - 600, "window_start": window_start,
+    return {"schema": 2, "source": "mini", "fetched_at": now.timestamp() - 600, "window_start": window_start,
             "window_end": now.date().isoformat(), "transactions": out,
             "accounts": accounts if accounts is not None else [{"id": "a1", "name": "Maple Card", "updated_at": iso(now.timestamp() - 4200), "hidden": False, "manual": False, "needs_reconnect": False, "sync_disabled": False}],
             "recurring": list(recurring)}
 
 
 # ----------------------------------------------------------------------------------------------
-# The oracle. Fractions, plain loops, its own formatting. Imports nothing from monarchnow.
+# The oracle. Fractions, plain loops, its own formatting. Imports nothing from mothnow.
 # ----------------------------------------------------------------------------------------------
 def o_round(x):
     """Whole dollars, ties away from zero."""
@@ -202,7 +205,7 @@ def o_round(x):
 
 
 def o_money(n):
-    return ("−" if n < 0 else "") + "$" + format(abs(n), ",")
+    return ("−" if n < 0 else "") + "£" + format(abs(n), ",")
 
 
 def o_cents(x):
@@ -210,11 +213,11 @@ def o_cents(x):
     c = (-1 if x < 0 else 1) * int(abs(x) * 100 + F(1, 2))
     sign = "−" if c < 0 else ""
     c = abs(c)
-    return "%s$%s" % (sign, format(c // 100, ",")) if c % 100 == 0 else "%s$%s.%02d" % (sign, format(c // 100, ","), c % 100)
+    return "%s£%s" % (sign, format(c // 100, ",")) if c % 100 == 0 else "%s£%s.%02d" % (sign, format(c // 100, ","), c % 100)
 
 
 def o_arrow(n):
-    return ("▲ " if n > 0 else "▼ ") + "$" + format(abs(n), ",")
+    return ("▲ " if n > 0 else "▼ ") + "£" + format(abs(n), ",")
 
 
 def o_age(seconds):
@@ -367,7 +370,7 @@ class Oracle:
                 unmapped.add(c)
             g_now[g] += now_c
             g_usual[g] += usual_c
-        if self.base:                                  # the GROUPS furthest from usual, at least $20, three at most
+        if self.base:                                  # the GROUPS furthest from usual, at least £20, three at most
             for i, g in enumerate(self.order):
                 dg = o_round(g_now[g] - g_usual[g])
                 if abs(dg) >= 20:
@@ -423,9 +426,9 @@ class Oracle:
         right.append("checked " + (fetched.strftime("%H:%M") if fetched.date() == self.today else fetched.strftime("%a %H:%M")))
         footer["right_text"] = " · ".join(right)
         if attention:
-            footer["attention_text"] = "Reconnect in Monarch: " + ", ".join(sorted(attention))
+            footer["attention_text"] = "Reconnect in Monzo: " + ", ".join(sorted(attention))
         card = {"hero": hero, "banner_text": "", "hint_text": "", "chart": chart, "note_text": " · ".join(parts),
-                "chips_label": "Furthest", "chips": chips, "groups": rows, "footer": footer, "open_text": "Open Monarch", "unmapped": sorted(unmapped)}
+                "chips_label": "Furthest", "chips": chips, "groups": rows, "footer": footer, "open_text": "Open Monzo", "unmapped": sorted(unmapped)}
         return card, state
 
     def doc_state(self):
@@ -515,53 +518,54 @@ def pinned_cases():
     out = []
     # usual by Oct 5 = 1000, usual month = 1000, tolerance = max(25, 5) = 25
     out.append(("exactly at the tolerance is still 'at'", mini(now, base + [("2025-10-02", "c-groc", "-1025.00")], ws), now,
-                {"hero.total_text": "$1,025", "hero.pace_text": "≈ on a usual month's pace", "hero.pace_dir": "good",
-                 "hero.detail_text": "on pace for $1,025 · usual $1,000", "face": "good"}))
+                {"hero.total_text": "£1,025", "hero.pace_text": "≈ on a usual month's pace", "hero.pace_dir": "good",
+                 "hero.detail_text": "on pace for £1,025 · usual £1,000", "face": "good"}))
     out.append(("one dollar past the tolerance is over", mini(now, base + [("2025-10-02", "c-groc", "-1026.00")], ws), now,
-                {"hero.pace_text": "▲ $26 over a usual day 5", "hero.pace_dir": "over",
-                 "hero.detail_text": "on pace for $1,026 · usual $1,000", "face": "over", "chart.dir": "over"}))
+                {"hero.pace_text": "▲ £26 over a usual day 5", "hero.pace_dir": "over",
+                 "hero.detail_text": "on pace for £1,026 · usual £1,000", "face": "over", "chart.dir": "over"}))
     out.append(("one dollar past the tolerance the other way is under", mini(now, base + [("2025-10-02", "c-groc", "-974.00")], ws), now,
-                {"hero.pace_text": "▼ $26 under a usual day 5", "hero.pace_dir": "good",
-                 "hero.detail_text": "on pace for $974 · usual $1,000", "face": "good", "chart.dir": "good"}))
-    out.append(("a rounded figure decides, not the cents: 1025.49 shows $25 and is 'at'", mini(now, base + [("2025-10-02", "c-groc", "-1025.49")], ws), now,
-                {"hero.total_text": "$1,025", "hero.pace_text": "≈ on a usual month's pace", "face": "good"}))
-    out.append(("1025.50 shows $26 and is over", mini(now, base + [("2025-10-02", "c-groc", "-1025.50")], ws), now,
-                {"hero.total_text": "$1,026", "hero.pace_text": "▲ $26 over a usual day 5", "face": "over"}))
-    out.append(("a tie rounds up, not to even: 1024.50 shows $1,025", mini(now, base + [("2025-10-02", "c-groc", "-1024.50")], ws), now,
-                {"hero.total_text": "$1,025", "groups[0].value_text": "$1,025", "groups[0].vs_text": "\u25b2 $25"}))
-    # group rows: Food usual 1000. Kids & education: usual 0, now 10 -> shown; Transport 9 -> "≈"
-    out.append(("a group $10 from usual is shown, $9 is '≈'", mini(now, base + [("2025-10-02", "c-groc", "-1000.00"), ("2025-10-03", "c-kid", "-10.00"), ("2025-10-03", "c-gas", "-9.00")], ws), now,
-                {"groups[5].vs_text": "▲ $10", "groups[5].dir": "over", "groups[4].vs_text": "≈", "groups[4].dir": "flat",
-                 "groups[0].vs_text": "≈", "groups[0].value_text": "$1,000", "chips": []}))
-    # chips: the GROUPS, by magnitude, at least $20, three at most; the biggest is an UNDER.
-    # By Oct 5 against September: Food 200 + 20 - 500 = -280 (groceries AND restaurants, one chip),
-    # Kids & education 0 - 60 = -60, Shopping 450 - 400 = +50, Transport 130 - 100 = +30 (fourth: left out),
-    # Health 0 - 19 = -19 (under the $20 floor). Category names never appear.
+                {"hero.pace_text": "▼ £26 under a usual day 5", "hero.pace_dir": "good",
+                 "hero.detail_text": "on pace for £974 · usual £1,000", "face": "good", "chart.dir": "good"}))
+    out.append(("a rounded figure decides, not the cents: 1025.49 shows £25 and is 'at'", mini(now, base + [("2025-10-02", "c-groc", "-1025.49")], ws), now,
+                {"hero.total_text": "£1,025", "hero.pace_text": "≈ on a usual month's pace", "face": "good"}))
+    out.append(("1025.50 shows £26 and is over", mini(now, base + [("2025-10-02", "c-groc", "-1025.50")], ws), now,
+                {"hero.total_text": "£1,026", "hero.pace_text": "▲ £26 over a usual day 5", "face": "over"}))
+    out.append(("a tie rounds up, not to even: 1024.50 shows £1,025", mini(now, base + [("2025-10-02", "c-groc", "-1024.50")], ws), now,
+                {"hero.total_text": "£1,025", "groups[0].value_text": "£1,025", "groups[0].vs_text": "\u25b2 £25"}))
+    # group rows: Groceries usual 1000. Cash: usual 0, now 10 -> shown; Transport 9 -> "≈"
+    out.append(("a group £10 from usual is shown, £9 is '≈'", mini(now, base + [("2025-10-02", "c-groc", "-1000.00"), ("2025-10-03", "c-kid", "-10.00"), ("2025-10-03", "c-gas", "-9.00")], ws), now,
+                {"groups[6].vs_text": "▲ £10", "groups[6].dir": "over", "groups[3].vs_text": "≈", "groups[3].dir": "flat",
+                 "groups[0].vs_text": "≈", "groups[0].value_text": "£1,000", "chips": []}))
+    # chips: the GROUPS, by magnitude, at least £20, three at most; the biggest is an UNDER.
+    # By Oct 5 against September: Groceries 200 - 500 = -300, Cash 0 - 60 = -60, Shopping 450 - 400 =
+    # +50, Transport 130 - 100 = +30 (fourth: left out), Eating out 20 - 0 = +20, Holidays 0 - 19 =
+    # -19 (under the £20 floor). Category names never appear.
     sep = [("2025-09-01", "c-groc", "-500.00"), ("2025-09-02", "c-shop", "-400.00"), ("2025-09-03", "c-gas", "-100.00"),
            ("2025-09-03", "c-kid", "-60.00"), ("2025-09-03", "c-med", "-19.00")]
     octo = [("2025-10-01", "c-groc", "-200.00"), ("2025-10-02", "c-shop", "-450.00"), ("2025-10-02", "c-gas", "-130.00"),
             ("2025-10-03", "c-rest", "-20.00")]
-    out.append(("chips are the rows: group names, magnitude order, largest an under, a fourth left out, $19 none", mini(now, sep + octo, ws), now,
-                {"chips[0].label": "Food", "chips[0].value_text": "▼ $280", "chips[0].dir": "good",
-                 "chips[1].label": "Kids & education", "chips[1].value_text": "▼ $60", "chips[1].dir": "good",
-                 "chips[2].label": "Shopping", "chips[2].value_text": "▲ $50", "chips[2].dir": "over",
-                 "chips.length": 3, "hero.total_text": "$800",
-                 "groups[0].vs_text": "▼ $280", "groups[4].vs_text": "▲ $30", "groups[6].vs_text": "▼ $19"}))
+    out.append(("chips are the rows: group names, magnitude order, largest an under, a fourth left out, £19 none", mini(now, sep + octo, ws), now,
+                {"chips[0].label": "Groceries", "chips[0].value_text": "▼ £300", "chips[0].dir": "good",
+                 "chips[1].label": "Cash", "chips[1].value_text": "▼ £60", "chips[1].dir": "good",
+                 "chips[2].label": "Shopping", "chips[2].value_text": "▲ £50", "chips[2].dir": "over",
+                 "chips.length": 3, "hero.total_text": "£800",
+                 "groups[0].vs_text": "▼ £300", "groups[3].vs_text": "▲ £30", "groups[5].vs_text": "▼ £19"}))
     # refunds only: a negative month so far
     out.append(("refunds can take the month below zero", mini(now, base + [("2025-10-02", "c-shop", "45.00")], ws), now,
-                {"hero.total_text": "−$45", "chart.min_text": "−$45", "groups[2].value_text": "−$45", "groups[2].weight_ratio": 0.0}))
-    # by hand: Food 300, Transport 100, Shopping -100 (a refund). The bar is shares of the POSITIVE
-    # groups: 300/400 and 100/400, nothing for the group below zero. The month's total nets: $300.
+                {"hero.total_text": "−£45", "chart.min_text": "−£45", "groups[2].value_text": "−£45", "groups[2].weight_ratio": 0.0}))
+    # by hand: Groceries 300, Transport 100, Shopping -100 (a refund). The bar is shares of the
+    # POSITIVE groups: 300/400 and 100/400, nothing for the group below zero. The month's total
+    # nets: £300.
     out.append(("the segmented bar is shares of the positive groups only", mini(now, base + [("2025-10-02", "c-groc", "-300.00"), ("2025-10-03", "c-shop", "100.00"), ("2025-10-03", "c-gas", "-100.00")], ws), now,
-                {"hero.total_text": "$300", "groups[0].weight_ratio": 0.75, "groups[4].weight_ratio": 0.25, "groups[2].weight_ratio": 0.0, "groups[2].value_text": "\u2212$100"}))
+                {"hero.total_text": "£300", "groups[0].weight_ratio": 0.75, "groups[3].weight_ratio": 0.25, "groups[2].weight_ratio": 0.0, "groups[2].value_text": "\u2212£100"}))
     # what never counts
     never = [("2025-10-02", "c-xfer", "-750.00"), ("2025-10-02", "c-ccp", "-1850.00"), ("2025-10-02", "c-pay", "3100.00"),
              ("2025-10-02", "c-shop", "-777.00", {"tags": ("One-off",)}), ("2025-10-02", "c-shop", "-99.00", {"hidden": True}),
              ("2025-10-09", "c-shop", "-88.00"), ("2025-10-03", "c-rest", "-12.00", {"pending": True})]
     out.append(("transfers, card payments, income, One-off, hidden and future rows never count", mini(now, base + never, ws), now,
-                {"hero.total_text": "$12", "note_text": "1 one-off excluded ($777) · 1 pending included · usual = Sep 2025 average"}))
+                {"hero.total_text": "£12", "note_text": "1 one-off excluded (£777) · 1 pending included · usual = Sep 2025 average"}))
     # bills
-    # by hand: after Songbird Music, two more fall on or before Oct 31: 38 + 127.37 = 165.37 -> $165
+    # by hand: after Songbird Music, two more fall on or before Oct 31: 38 + 127.37 = 165.37 -> £165
     rec = [{"date": "2025-10-05", "amount": "-9.25", "name": "Paid Already", "is_past": True, "approximate": False},
            {"date": "2025-10-06", "amount": "910.0", "name": "Example Payroll", "is_past": False, "approximate": False},
            {"date": "2025-10-08", "amount": "-7.49", "name": "Songbird Music", "is_past": False, "approximate": False},
@@ -569,9 +573,9 @@ def pinned_cases():
            {"date": "2025-10-16", "amount": "-127.37", "name": "Fernhill Insurance", "is_past": False, "approximate": False},
            {"date": "2025-11-02", "amount": "-57.0", "name": "Northlight Internet", "is_past": False, "approximate": False}]
     out.append(("next bill: not the past one, not income; 'then' stops at month end", mini(now, base, ws, recurring=rec), now,
-                {"footer.left_text": "Next bill: Songbird Music · Oct 8 · $7.49", "footer.left_sub_text": "then 2 more by Oct 31 · $165"}))
+                {"footer.left_text": "Next bill: Songbird Music · Oct 8 · £7.49", "footer.left_sub_text": "then 2 more by Oct 31 · £165"}))
     out.append(("an approximate next bill says so", mini(now, base, ws, recurring=rec[3:]), now,
-                {"footer.left_text": "Next bill: Riverbend Water · Oct 10 · ~$38"}))
+                {"footer.left_text": "Next bill: Riverbend Water · Oct 10 · ~£38"}))
     out.append(("no bills in the window", mini(now, base, ws, recurring=rec[:2]), now,
                 {"footer.left_text": "No recurring bills in the next 45 days", "footer.left_sub_text": ""}))
     # the two clocks: the OLDEST active account speaks for the banks
@@ -593,13 +597,13 @@ def wording_rules(doc, now):
     text = hero["pace_text"]
     if text[:1] in ("\u25b2", "\u25bc"):
         word = "over" if text[:1] == "\u25b2" else "under"
-        m = re.fullmatch(r"[\u25b2\u25bc] \$[0-9,]+ (over|under) a usual day ([0-9]+)", text)
+        m = re.fullmatch(r"[\u25b2\u25bc] \£[0-9,]+ (over|under) a usual day ([0-9]+)", text)
         if not m or m.group(1) != word or int(m.group(2)) != now.day:
             out.append("the headline must read '%s a usual day %d': %r" % (word, now.day, text))
         if "month" in text:
             out.append("the headline must not be worded against the month: %r" % text)
-        if not re.fullmatch(r"on pace for \u2212?\$[0-9,]+ \u00b7 usual \$[0-9,]+", hero["detail_text"]):
-            out.append("'on pace for $X \u00b7 usual $Y' must stay as it is: %r" % hero["detail_text"])
+        if not re.fullmatch(r"on pace for \u2212?\£[0-9,]+ \u00b7 usual \£[0-9,]+", hero["detail_text"]):
+            out.append("'on pace for £X \u00b7 usual £Y' must stay as it is: %r" % hero["detail_text"])
     rows = dict((g["name"], g) for g in card["groups"])
     labels = [c["label"] for c in card["chips"]]
     if len(set(labels)) != len(labels) or len(labels) > 3:
@@ -629,10 +633,10 @@ def dig(doc, path):
 def check(engine_dir):
     """Run every check against the package in engine_dir. Returns the list of failures."""
     sys.path.insert(0, engine_dir)
-    for name in [n for n in sys.modules if n == "monarchnow" or n.startswith("monarchnow.")]:
+    for name in [n for n in sys.modules if n == "mothnow" or n.startswith("mothnow.")]:
         del sys.modules[name]
-    model = importlib.import_module("monarchnow.model")
-    adapter = importlib.import_module("monarchnow.adapter")
+    model = importlib.import_module("mothnow.model")
+    adapter = importlib.import_module("mothnow.adapter")
     fails = []
 
     def need(ok, what):
@@ -702,7 +706,7 @@ def check(engine_dir):
     # age: stale keeps the butterfly and says so; too old is BROKEN and never a butterfly
     name, snap, now = scenarios()[0]
     old = dict(snap, fetched_at=now.timestamp() - 40 * 3600)
-    doc = model.build_doc(old, now, "Monarch could not be reached")
+    doc = model.build_doc(old, now, "Monzo could not be reached")
     need(doc["face"]["state"] == "broken" and doc["text"] == model.BROKEN_GLYPH and doc["card"]["hero"] is None, "data older than 36 h must be the broken document")
     need("1d old" in doc["card"]["banner_text"] or "40h old" in doc["card"]["banner_text"], "the broken banner must say how old")
     need("could not be reached" in doc["card"]["banner_text"], "the broken banner must say why")
@@ -710,10 +714,10 @@ def check(engine_dir):
         doc = model.build_doc(dict(snap, fetched_at=now.timestamp() - hours * 3600), now, "")
         need((doc["face"]["state"] == state) if state else doc["face"]["state"] in ("good", "over"), "age %.1f h: face %r" % (hours, doc["face"]["state"]))
         need((doc["text"] == model.BROKEN_GLYPH) == (doc["face"]["state"] == "broken"), "age %.1f h: glyph and state disagree" % hours)
-    doc = model.build_doc(dict(snap, fetched_at=now.timestamp() - 2 * 3600), now, "Monarch could not be reached")
-    need(doc["face"]["state"] in ("good", "over") and "Last check failed (Monarch could not be reached)" in doc["card"]["banner_text"], "a failed check behind fresh data must be said on the card")
-    b = model.broken_doc("Not signed in", "Sign in: run `monarch-now login` in a terminal.")
-    need(b["text"] == model.BROKEN_GLYPH and b["face"]["state"] == "broken" and "Not signed in" in b["tooltip"] and "monarch-now login" in b["tooltip"], "broken_doc")
+    doc = model.build_doc(dict(snap, fetched_at=now.timestamp() - 2 * 3600), now, "Monzo could not be reached")
+    need(doc["face"]["state"] in ("good", "over") and "Last check failed (Monzo could not be reached)" in doc["card"]["banner_text"], "a failed check behind fresh data must be said on the card")
+    b = model.broken_doc("Not signed in", "Sign in: run `moth-now login` in a terminal.")
+    need(b["text"] == model.BROKEN_GLYPH and b["face"]["state"] == "broken" and "Not signed in" in b["tooltip"] and "moth-now login" in b["tooltip"], "broken_doc")
 
     # THE GRACE PERIOD: on days 1..N the face is plain whatever the pace; the card keeps its
     # numbers and its own tint and says from which day the bar takes a color. Usual by any of
@@ -736,7 +740,7 @@ def check(engine_dir):
         tag = "grace %d, day %d, %s: " % (grace, day, amount)
         need(doc["face"]["state"] == want_face, tag + "face %r, expected %r" % (doc["face"]["state"], want_face))
         need(doc["text"] == model.GLYPH, tag + "the butterfly must stay a butterfly")
-        want_pace = ("\u25b2 $100 over a usual day %d" if want_pace == "OVERDAY" else "\u25bc $990 under a usual day %d") % day
+        want_pace = ("\u25b2 £100 over a usual day %d" if want_pace == "OVERDAY" else "\u25bc £990 under a usual day %d") % day
         need(doc["card"]["hero"]["pace_dir"] == want_dir and doc["card"]["hero"]["pace_text"] == want_pace and doc["card"]["chart"]["dir"] == want_dir,
              tag + "the card must keep its numbers and its tint: %r %r" % (doc["card"]["hero"]["pace_dir"], doc["card"]["hero"]["pace_text"]))
         said = ("bar color from day %d" % (grace + 1)) in doc["card"]["note_text"]
@@ -756,11 +760,11 @@ def check(engine_dir):
     doc = model.build_doc(scenarios()[0][1], scenarios()[0][2], "")
     dirs = [doc["card"]["hero"]["pace_dir"], doc["card"]["chart"]["dir"]] + [c["dir"] for c in doc["card"]["chips"]] + [g["dir"] for g in doc["card"]["groups"]]
     need(set(dirs) <= {"good", "over", "flat", "none"}, "an unknown direction: %r" % sorted(set(dirs)))
-    need(doc["card"]["unmapped"] == ["Mystery Category"], "an unmapped category must be reported")
+    need(doc["card"]["unmapped"] == ["mystery"], "an unmapped category must be reported")
 
     # THE CONFIGURABLE PARTS: the one-off tag, more excluded tags, the groups. Each is held against
     # the oracle given the same setting; a few strings are pinned by hand.
-    groups_mod = importlib.import_module("monarchnow.groups")
+    groups_mod = importlib.import_module("mothnow.groups")
     name, snap, now = scenarios()[0]
     default_doc = json.loads(json.dumps(model.build_doc(snap, now, "")))
 
@@ -781,10 +785,10 @@ def check(engine_dir):
     need("one-off" not in d3["card"]["note_text"], "without a one-off tag the note must not claim one-offs are excluded: %r" % d3["card"]["note_text"])
     need(d2["card"]["hero"]["total_text"] == d3["card"]["hero"]["total_text"] != default_doc["card"]["hero"]["total_text"], "a tag nobody excludes must count")
     own_order = ["Eating", "Wheels", "Everything else"]
-    own_map = {"Groceries": "Eating", "Restaurants & Bars": "Eating", "Gas": "Wheels"}
+    own_map = {"groceries": "Eating", "eating_out": "Eating", "transport": "Wheels"}
     d4 = with_settings("three groups of one's own", model.Settings(grouping=groups_mod.Grouping(own_order, own_map)), order=own_order, group_of=own_map)
     need([g["name"] for g in d4["card"]["groups"]] == own_order and [g["swatch"] for g in d4["card"]["groups"]] == PALETTE[:3], "configured groups must be the rows, in order, with the first swatches")
-    need("Shopping" in d4["card"]["unmapped"] and "Groceries" not in d4["card"]["unmapped"], "what the configured groups do not list is reported: %r" % d4["card"]["unmapped"])
+    need("shopping" in d4["card"]["unmapped"] and "groceries" not in d4["card"]["unmapped"], "what the configured groups do not list is reported: %r" % d4["card"]["unmapped"])
     need(d4["card"]["hero"] == default_doc["card"]["hero"], "regrouping must not change the month's total or pace")
     # by hand: Sep 1 groceries 1000 is the usual month. Oct 2: groceries 300, a 200 purchase tagged
     # "Big buy", a 50 medical bill tagged "Work trip". With both tags configured only the 300
@@ -793,10 +797,10 @@ def check(engine_dir):
     snap_s = mini(now_s, [("2025-09-01", "c-groc", "-1000.00"), ("2025-10-02", "c-groc", "-300.00"),
                           ("2025-10-02", "c-shop", "-200.00", {"tags": ("Big buy",)}), ("2025-10-02", "c-med", "-50.00", {"tags": ("Work trip",)})], "2025-09-01")
     doc = model.build_doc(snap_s, now_s, "", 3, model.Settings(one_off_tag="Big buy", excluded_tags=("Work trip",)))
-    need(doc["card"]["hero"]["total_text"] == "$300" and doc["card"]["note_text"] == "1 one-off excluded ($200) · usual = Sep 2025 average",
+    need(doc["card"]["hero"]["total_text"] == "£300" and doc["card"]["note_text"] == "1 one-off excluded (£200) · usual = Sep 2025 average",
          "configured tags, by hand: %r / %r" % (doc["card"]["hero"]["total_text"], doc["card"]["note_text"]))
     doc = model.build_doc(snap_s, now_s, "")
-    need(doc["card"]["hero"]["total_text"] == "$550" and doc["card"]["note_text"] == "one-offs excluded · usual = Sep 2025 average",
+    need(doc["card"]["hero"]["total_text"] == "£550" and doc["card"]["note_text"] == "one-offs excluded · usual = Sep 2025 average",
          "default tags, by hand: %r / %r" % (doc["card"]["hero"]["total_text"], doc["card"]["note_text"]))
     # usual_since: the user's own floor under the usual month. Never a figure, only where it may start.
     d5 = with_settings("usual_since inside the history", model.Settings(usual_since=(2025, 4)), since=(2025, 4))
@@ -817,19 +821,19 @@ def check(engine_dir):
     snap_u = mini(now_s, [("2025-08-01", "c-groc", "-400.00"), ("2025-09-01", "c-groc", "-1000.00"), ("2025-10-02", "c-groc", "-700.00")], "2025-08-01")
     doc = model.build_doc(snap_u, now_s, "")
     need((doc["card"]["hero"]["pace_text"], doc["card"]["hero"]["detail_text"], doc["card"]["note_text"]) ==
-         ("≈ on a usual month's pace", "on pace for $700 · usual $700", "one-offs excluded · usual = Aug–Sep 2025 average"),
+         ("≈ on a usual month's pace", "on pace for £700 · usual £700", "one-offs excluded · usual = Aug–Sep 2025 average"),
          "no usual_since, by hand: %r" % (doc["card"]["hero"],))
     doc = model.build_doc(snap_u, now_s, "", 3, model.Settings(usual_since=(2025, 9)))
     need((doc["card"]["hero"]["pace_text"], doc["card"]["hero"]["detail_text"], doc["card"]["note_text"], doc["face"]["state"]) ==
-         ("▼ $300 under a usual day 5", "on pace for $700 · usual $1,000", "one-offs excluded · usual = Sep 2025 average", "good"),
+         ("▼ £300 under a usual day 5", "on pace for £700 · usual £1,000", "one-offs excluded · usual = Sep 2025 average", "good"),
          "usual_since = September, by hand: %r" % (doc["card"]["hero"],))
-    need(groups_mod.Grouping().group_of("Software & Subscriptions") == ("Home & utilities", True), "a stock Monarch category must not be unmapped by default")
-    # the defaults are the eight groups this file's oracle knows, and the config's [[groups]] rules
+    need(groups_mod.Grouping().group_of("bills") == ("Bills", True) and groups_mod.Grouping().group_of("general") == ("General", True), "a Monzo category must not be unmapped by default")
+    # the defaults are the ten groups this file's oracle knows, and the config's [[groups]] rules
     need(groups_mod.Grouping().order == ORDER and all(groups_mod.CATEGORY_GROUP.get(c) == g for c, g in GROUP_OF.items()), "the default groups")
     g, why = groups_mod.from_config([{"name": "Eating", "categories": ["Groceries"]}, {"name": " Rest "}])
     need(g is not None and why == "" and g.order == ["Eating", "Rest"] and g.group_of("Groceries") == ("Eating", True) and g.group_of("Anything") == ("Rest", False),
          "a good [[groups]] list must be taken as written, the last group catching the rest")
-    for label, bad in (("nine groups", [{"name": "G%d" % i} for i in range(9)]),
+    for label, bad in (("eleven groups", [{"name": "G%d" % i} for i in range(11)]),
                        ("a name twice", [{"name": "A"}, {"name": "A"}]),
                        ("a category in two groups", [{"name": "A", "categories": ["X"]}, {"name": "B", "categories": ["X"]}]),
                        ("a group without a name", [{"categories": ["X"]}]),
@@ -841,45 +845,84 @@ def check(engine_dir):
         g, why = groups_mod.from_config(bad)
         need(g is None and why != "", "[[groups]] with %s must be refused with a reason (%r)" % (label, why))
 
-    # the adapter: normalise() and the read-only guard
-    raw_c = {"categories": [{"id": cid, "name": n, "group": {"id": "g", "name": g, "type": t}} for cid, (n, g, t) in CATS.items()]}
-    raw_a = {"accounts": [{"id": "a1", "displayName": "Maple Card", "displayLastUpdatedAt": "2025-10-01T12:00:00+00:00", "hideTransactionsFromReports": False, "isManual": False, "syncDisabled": False, "deactivatedAt": None, "credential": {"updateRequired": True, "disconnectedFromDataProviderAt": None}},
-                          {"id": "a2", "displayName": "Manual", "displayLastUpdatedAt": None, "hideTransactionsFromReports": True, "isManual": True, "syncDisabled": False, "deactivatedAt": None, "credential": None}]}
-    raw_t = [{"id": "1", "amount": -12.34, "pending": True, "date": "2025-10-01", "hideFromReports": False, "category": {"id": "c-groc", "name": "Groceries"}, "account": {"id": "a1"}, "tags": [{"id": "x", "name": "One-off"}]},
-             {"id": "1", "amount": -12.34, "pending": True, "date": "2025-10-01", "hideFromReports": False, "category": {"id": "c-groc", "name": "Groceries"}, "account": {"id": "a1"}, "tags": []},
-             {"id": "2", "amount": 3100.0, "pending": False, "date": "2025-10-01", "hideFromReports": True, "category": {"id": "c-pay", "name": "Paychecks"}, "account": {"id": "a2"}, "tags": []}]
-    raw_r = {"recurringTransactionItems": [{"stream": {"id": "s", "isApproximate": True, "merchant": {"id": "m", "name": "Riverbend Water"}}, "date": "2025-10-10", "isPast": False, "amount": -38.0}]}
-    snap = adapter.normalise(raw_c, raw_a, raw_t, raw_r, datetime.date(2025, 1, 1), datetime.date(2025, 10, 1))
-    need(len(snap["transactions"]) == 2, "normalise must count a repeated id once")
-    t0 = snap["transactions"][0]
-    need(t0 == {"id": "1", "date": "2025-10-01", "amount": "-12.34", "category_id": "c-groc", "category": "Groceries", "group": "Food & Dining",
-                "group_type": "expense", "tags": ["One-off"], "pending": True, "hidden": False, "account_id": "a1"}, "normalise: transaction shape %r" % (t0,))
-    need(snap["transactions"][-1]["group_type"] == "income" and snap["transactions"][-1]["hidden"] is True, "normalise: income row")
-    need(snap["accounts"][0]["needs_reconnect"] is True and snap["accounts"][1]["hidden"] is True and snap["accounts"][1]["manual"] is True, "normalise: accounts")
-    need(snap["recurring"] == [{"date": "2025-10-10", "amount": "-38.0", "name": "Riverbend Water", "is_past": False, "approximate": True}], "normalise: recurring")
-    need(set(snap) == {"schema", "source", "fetched_at", "window_start", "window_end", "transactions", "accounts", "recurring"}, "normalise: keys")
-    try:
-        adapter.normalise({"categories": [{"name": "no id"}]}, raw_a, raw_t, raw_r, datetime.date(2025, 1, 1), datetime.date(2025, 10, 1))
-        fails.append("normalise accepted a category without an id")
-    except adapter.FetchError as e:
-        need(e.kind == "shape", "a malformed answer must be a shape error")
-    try:
-        from gql import gql
-        for text in (adapter.Q_CATEGORIES, adapter.Q_ACCOUNTS, adapter.Q_TRANSACTIONS, adapter.Q_RECURRING, adapter.Q_VERIFY):
-            adapter.assert_query_only(gql(text))
-        for bad in ('mutation M { deleteTransaction(input: {transactionId: "1"}) { deleted } }', "query A { a } mutation B { b }", "subscription S { s }"):
-            try:
-                adapter.assert_query_only(gql(bad))
-                fails.append("the read-only guard accepted: %s" % bad[:24])
-            except adapter.ReadOnlyViolation:
-                pass
-        try:
-            adapter.assert_query_only("mutation M { x }")
-            fails.append("the read-only guard accepted an unparsed string")
-        except adapter.ReadOnlyViolation:
-            pass
-    except ImportError:
-        fails.append("gql is not importable: run T9 with the engine's venv python")
+    # the adapter: row_of / merge / prune / build over stand-ins for monzo-api objects (no network)
+    class Txn:
+        def __init__(self, id, created, amount, category="general", notes="", settled="2025-10-01T12:00:00Z",
+                     pending=False, is_load=False, include_in_spending=True, account_id="acc1", decline_reason=None,
+                     merchant=None, description=""):
+            self.transaction_id, self.created, self.amount = id, created, amount
+            self.category, self.notes, self.settled = category, notes, settled
+            self.amount_is_pending, self.is_load, self.include_in_spending = pending, is_load, include_in_spending
+            self.account_id, self.decline_reason = account_id, decline_reason
+            self.merchant, self.description = merchant, description
+
+    class Acct:
+        def __init__(self, account_id, description="", closed=False):
+            self.account_id, self.description, self.closed = account_id, description, closed
+
+    created = datetime.datetime(2025, 10, 1, 12, 0, tzinfo=datetime.timezone.utc)
+    spend = Txn("tx1", created, -1234, category="groceries", notes="milk #One-off")
+    income = Txn("tx2", created, 310000, category="general")
+    pot = Txn("tx3", created, -5000, category="general", include_in_spending=False)
+    declined = Txn("tx4", created, -999, category="general", decline_reason="INSUFFICIENT_FUNDS")
+    pending = Txn("tx5", created, -250, category="eating_out", settled=None, pending=True)
+
+    need(adapter.row_of(spend) == {"id": "tx1", "at": "2025-10-01T12:00:00+00:00", "name": "", "emoji": "🛒",
+                                   "date": "2025-10-01", "amount": "-12.34", "category_id": "",
+                                   "category": "groceries", "group": "", "group_type": "expense", "tags": ["One-off"],
+                                   "pending": False, "hidden": False, "account_id": "acc1"}, "row_of: expense %r" % (adapter.row_of(spend),))
+    need(adapter.row_of(income)["group_type"] == "income", "row_of: a positive amount is income (not spending)")
+    need(adapter.row_of(pot)["group_type"] == "transfer", "row_of: what Monzo excludes from spending is a transfer")
+    need(adapter.row_of(Txn("tx6", created, -100, is_load=True))["group_type"] == "transfer", "row_of: a top-up is a transfer")
+    need(adapter.row_of(declined) is None, "row_of: a declined transaction is dropped")
+    need(adapter.row_of(pending)["pending"] is True, "row_of: an unsettled transaction is pending")
+    need(adapter.row_of(Txn("tx7", created, -100, merchant={"name": "Waitrose & Partners"}))["name"] == "Waitrose & Partners",
+         "row_of: an expanded merchant's name is what the card shows")
+    need(adapter.row_of(Txn("tx7", created, -100, merchant={"name": "Waitrose & Partners", "emoji": "🥬 "}))["emoji"] == "🥬",
+         "row_of: an expanded merchant's emoji is trimmed (Monzo pads some)")
+    need(adapter.row_of(Txn("tx8", created, -100, description="To Savings"))["name"] == "To Savings",
+         "row_of: without a merchant, the description is the name")
+    need(adapter.account_row(Acct("acc1", "Monzo Current"))["name"] == "Monzo Current", "account_row")
+    ledger = adapter.merge({}, [adapter.row_of(spend), adapter.row_of(income)])
+    adapter.merge(ledger, [adapter.row_of(pending)])
+    need(set(ledger) == {"tx1", "tx2", "tx5"}, "merge upserts by id")
+    older = adapter.merge(dict(ledger), [{"id": "old", "date": "2024-01-01"}])
+    need(set(adapter.prune(older, datetime.date(2025, 10, 1))) == {"tx1", "tx2", "tx5"}, "prune keeps the window and drops older rows")
+    snap = adapter.build(adapter.prune(ledger, datetime.date(2025, 1, 1)),
+                         [adapter.account_row(Acct("acc1", "Monzo Current"))], [], datetime.date(2025, 1, 1), datetime.date(2025, 10, 1))
+    need(snap["transactions"][0]["id"] == "tx1" and set(snap) ==
+         {"schema", "source", "fetched_at", "window_start", "window_end", "transactions", "accounts", "recurring", "pots"},
+         "build: snapshot shape")
+
+    # the account view: Monzo's own pence become pounds, and the last seven days group by day
+    now_a = datetime.datetime(2025, 10, 12, 18, 30, tzinfo=datetime.timezone.utc)
+    acct = dict(adapter.account_row(Acct("acc1", "Monzo Current")),
+                balance_minor=168995, total_minor=219479, spent_today_minor=8912, currency="GBP")
+    later = adapter.row_of(Txn("tx9", now_a, -250, settled=None, pending=True))
+    noon = adapter.row_of(Txn("tx10", now_a.replace(hour=12, minute=0), -1234))
+    snap_a = adapter.build({"tx9": later, "tx10": noon}, [acct], [],
+                           datetime.date(2025, 10, 4), datetime.date(2025, 10, 12),
+                           [{"id": "p1", "name": "Holiday Pot", "balance_minor": 6156, "goal_minor": None, "currency": "GBP"}])
+    snap_a["fetched_at"] = now_a.timestamp()
+    acc = model.build_account(snap_a, now_a)
+    need(acc["balances"] == [{"label": "Personal", "value_text": "£1,689.95",
+                              "sub_text": "spent today £89.12 · with pots £2,194.79"}], "account: the balance row %r" % (acc["balances"],))
+    need(acc["pots"] == [{"name": "Holiday Pot", "value_text": "£61.56"}], "account: a pot's pence become pounds %r" % (acc["pots"],))
+    need([d["label"] for d in acc["days"]] == ["Today"] and acc["days"][0]["rows"] == [
+        {"time_text": "18:30", "emoji": "💳", "name": "Transaction", "amount_text": "−£2.50", "pending": True},
+        {"time_text": "12:00", "emoji": "💳", "name": "Transaction", "amount_text": "−£12.34", "pending": False}],
+        "account: today's rows, newest first, signed %r" % (acc["days"],))
+    need(acc["checked_text"] == "checked 18:30" and acc["days_label"] == "Last 7 days",
+         "account: the clock and the section label %r" % (acc,))
+    need(model.build_account(snap_a, now_a + datetime.timedelta(days=30))["days"] == []
+         and model.build_account(snap_a, now_a + datetime.timedelta(days=30))["empty_text"] == "No transactions in the last 7 days",
+         "account: nothing in the window says so")
+    need(groups_mod.Grouping().group_of("groceries") == ("Groceries", True) and groups_mod.Grouping().group_of("eating_out") == ("Eating out", True),
+         "the Monzo category map folds categories into card groups")
+    from monzo.exceptions import MonzoAuthenticationError, MonzoHTTPError, MonzoPermissionsError
+    need(adapter._classify(MonzoAuthenticationError("x")).kind == "auth" and adapter._classify(MonzoPermissionsError("x")).kind == "auth",
+         "401/403 must classify as auth")
+    need(adapter._classify(MonzoHTTPError("x")).kind == "network", "an HTTP error must classify as network")
     return fails
 
 
@@ -912,7 +955,7 @@ MUTANTS = [
     ("no one-off tag, yet the note says one-offs are excluded", "model.py", "    elif settings.one_off_tag:\n", "    else:\n"),
     ("the configured groups are ignored", "model.py", "    grouping = settings.grouping\n", "    grouping = groups.Grouping()\n"),
     ("unlisted categories land in the first group", "groups.py", "        return (g, True) if g else (self.catch_all, False)", "        return (g, True) if g else (self.order[0], False)"),
-    ("nine groups accepted", "groups.py", "    if len(tables) > MAX_GROUPS:", "    if len(tables) > MAX_GROUPS + 1:"),
+    ("an eleventh group accepted", "groups.py", "    if len(tables) > MAX_GROUPS:", "    if len(tables) > MAX_GROUPS + 1:"),
     ("a category in two groups accepted", "groups.py", "            if c in mapping:\n", "            if False:\n"),
     ("a group listed twice accepted", "groups.py", "        if name in order:\n", "        if False:\n"),
     ("baseline not capped at twelve months", "model.py", "BASELINE_MAX_MONTHS = 12", "BASELINE_MAX_MONTHS = 99"),
@@ -951,18 +994,22 @@ MUTANTS = [
     ("data older than 36 h still painted", "model.py", "    if age > BROKEN_AFTER:\n        return broken_doc(", "    if False:\n        return broken_doc("),
     ("the broken document carries the butterfly", "model.py", '    return {"v": 1, "text": BROKEN_GLYPH, "face": {"state": "broken", "reason": reason},', '    return {"v": 1, "text": GLYPH, "face": {"state": "broken", "reason": reason},'),
     ("whole dollars rounded half-even", "fmt.py", 'q = Decimal(value).quantize(Decimal("1"), rounding=ROUND_HALF_UP)\n    return q + 0', 'q = Decimal(value).quantize(Decimal("1"))\n    return q + 0'),
-    ("negative amounts lose their sign", "fmt.py", '    return "%s$%s" % (MINUS if q < 0 else "", "{:,}".format(abs(int(q))))', '    return "%s$%s" % ("", "{:,}".format(abs(int(q))))'),
-    ("a category moved to another group", "groups.py", '    "Gas": "Transport",', '    "Gas": "Home & utilities",'),
-    ("swatches follow rank, not group", "groups.py", "        self.swatch = dict(zip(self.order, PALETTE))", "        self.swatch = dict(zip(self.order, reversed(PALETTE)))"),
-    ("normalise keeps a repeated row", "adapter.py", "            if t[\"id\"] in seen:\n                continue", "            if False:\n                continue"),
-    ("the guard lets a mutation through", "adapter.py", "        if op.operation != OperationType.QUERY:", "        if op.operation == OperationType.SUBSCRIPTION:"),
-    ("hidden flag dropped in normalise", "adapter.py", '                "hidden": bool(t.get("hideFromReports")),', '                "hidden": False,'),
+    ("negative amounts lose their sign", "fmt.py", '    return "%s%s%s" % (MINUS if q < 0 else "", CURRENCY, "{:,}".format(abs(int(q))))', '    return "%s%s%s" % ("", CURRENCY, "{:,}".format(abs(int(q))))'),
+    ("a category moved to another group", "groups.py", '    "transport": "Transport",', '    "transport": "Groceries",'),
+    ("swatches follow rank, not group", "groups.py", "        self.swatch = {name: PALETTE[i % len(PALETTE)] for i, name in enumerate(self.order)}", "        self.swatch = {name: PALETTE[::-1][i % len(PALETTE)] for i, name in enumerate(self.order)}"),
+    ("the ledger keeps rows outside the window", "adapter.py", '    return {k: v for k, v in ledger.items() if v["date"] >= cutoff}', '    return dict(ledger)'),
+    ("transfers are not recognised", "adapter.py", '    if getattr(t, "include_in_spending", None) is False:\n        return "transfer"', '    if False:\n        return "transfer"'),
+    ("hidden flag dropped in normalise", "adapter.py", '        "hidden": False,\n        "account_id": getattr(t, "account_id", "") or "",', '        "hidden": True,\n        "account_id": getattr(t, "account_id", "") or "",'),
+    ("a pot's pence read as pounds", "model.py", '    return D(minor) / 100', '    return D(minor)'),
+    ("an account row loses its sign", "model.py", '"amount_text": fmt.cents(D(t["amount"]))', '"amount_text": fmt.cents(abs(D(t["amount"])))'),
+    ("the account view ignores the seven-day window", "model.py", '        if not (start.isoformat() <= t["date"] <= today.isoformat()):\n            continue', '        if False:\n            continue'),
+    ("the merchant name is dropped for the description", "adapter.py", '        if name:\n            return str(name)', '        if False:\n            return str(name)'),
 ]
 
 
 def main():
     if len(sys.argv) < 2:
-        print("usage: t9_monarch_model.py <engine dir>")
+        print("usage: t9_moth_model.py <engine dir>")
         return 2
     if sys.argv[1] == "--check":
         fails = check(os.path.abspath(sys.argv[2]))
@@ -992,8 +1039,8 @@ def main():
     for name, fname, old, new in MUTANTS:
         tmp = tempfile.mkdtemp(prefix="t9-mutant-")
         try:
-            shutil.copytree(os.path.join(engine, "monarchnow"), os.path.join(tmp, "monarchnow"), ignore=shutil.ignore_patterns("__pycache__"))
-            path = os.path.join(tmp, "monarchnow", fname)
+            shutil.copytree(os.path.join(engine, "mothnow"), os.path.join(tmp, "mothnow"), ignore=shutil.ignore_patterns("__pycache__"))
+            path = os.path.join(tmp, "mothnow", fname)
             src = open(path, encoding="utf-8").read()
             if src.count(old) != 1 or old == new:
                 print("  ERROR mutant %r did not apply (%d matches)" % (name, src.count(old)))

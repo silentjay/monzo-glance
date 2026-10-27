@@ -5,7 +5,7 @@ import Quickshell.Io
 import qs.Commons
 import qs.Ui
 
-// Pupa: Monarch Money on the bar. One butterfly, never a number.
+// Moth: Monzo Money on the bar. One butterfly, never a number.
 //
 //   green   this month's spending is at or under a usual month's pace
 //   amber   it is ahead
@@ -13,11 +13,11 @@ import qs.Ui
 //   grey    the data is more than about three hours old
 //   a broken-link glyph   the feed is broken (signed out, no data, engine silent)
 //
-// Hover opens the card (HoverCard.qml); a click opens or focuses the Monarch web app; a middle
+// Hover opens the card (HoverCard.qml); a click opens or focuses the Monzo web app; a middle
 // click asks the engine to fetch now.
 //
 // THE PAINTER RULE: the engine formats, the painter paints. This file and HoverCard.qml compute
-// nothing and build no text. The engine, `monarch-now`, prints one JSON line with the glyph, the
+// nothing and build no text. The engine, `moth-now`, prints one JSON line with the glyph, the
 // face state and every string on the card; this file picks a color from the state and hands the
 // card its fields.
 //
@@ -28,16 +28,16 @@ import qs.Ui
 // and a run that outlives a whole tick is withdrawn rather than waited on.
 BarWidget {
   id: root
-  moduleName: "io.github.nathankramm.pupa"
+  moduleName: "io.github.silentjay.moth"
 
   // nf-md-link_off. Built from the code point: a literal private-use glyph is stripped by some
   // editors and tools, and an empty glyph is an invisible widget.
   readonly property string brokenGlyph: String.fromCodePoint(0xF0338)
-  readonly property string unavailableText: "Monarch feed unavailable: monarch-now printed nothing it could read."
+  readonly property string unavailableText: "Monzo feed unavailable: moth-now printed nothing it could read."
 
   // ---- settings (shell.json entry; manifest.json declares them)
   readonly property string faceExec: {
-    var v = root.setting("faceExec", "~/.local/bin/monarch-now")
+    var v = root.setting("faceExec", "~/.local/bin/moth-now")
     return typeof v === "string" ? v.trim() : ""
   }
   readonly property int faceInterval: {
@@ -53,6 +53,8 @@ BarWidget {
   property string faceText: ""
   property string faceTooltip: ""
   property var faceCard: null
+  property var faceAccount: null
+  property string hoverView: "month"     // month | account (the card's two views)
   property string faceReason: ""
   property int runs: 0
   property double lastRunMs: 0
@@ -69,6 +71,7 @@ BarWidget {
     root.faceText = ""
     root.faceTooltip = reason
     root.faceCard = null
+    root.faceAccount = null
     root.faceReason = reason
   }
 
@@ -96,6 +99,7 @@ BarWidget {
     }
     root.faceTooltip = typeof doc.tooltip === "string" && doc.tooltip !== "" ? doc.tooltip : root.unavailableText
     root.faceCard = card
+    root.faceAccount = doc.account && typeof doc.account === "object" ? doc.account : null
     root.faceReason = typeof doc.face.reason === "string" ? doc.face.reason : ""
   }
 
@@ -131,7 +135,7 @@ BarWidget {
     onTriggered: {
       // A run that outlives a whole tick is withdrawn, not waited on: a hung engine must not
       // hold the last face on the bar. It is not killed; its answer is painted when it lands.
-      if (faceProc.running) root.setBroken("monarch-now has not answered for a whole tick.")
+      if (faceProc.running) root.setBroken("moth-now has not answered for a whole tick.")
       else root.runEngine("")
     }
   }
@@ -178,13 +182,13 @@ BarWidget {
     return root.baseFg
   }
 
-  // ---- click: the Monarch web app when it is installed (opened or focused by Omarchy's own
-  //      helper), else Monarch in the default browser. bin/monarch-open decides.
+  // ---- click: the Monzo web app when it is installed (opened or focused by Omarchy's own
+  //      helper), else Monzo in the default browser. bin/moth-open decides.
   readonly property string openCommand: {
-    var path = String(Qt.resolvedUrl("bin/monarch-open")).replace(/^file:\/\//, "")
+    var path = String(Qt.resolvedUrl("bin/moth-open")).replace(/^file:\/\//, "")
     return "'" + path.replace(/'/g, "'\\''") + "'"
   }
-  function openMonarch() {
+  function openMonzo() {
     root.closeHoverCard()
     if (root.bar) root.bar.run(root.openCommand)
   }
@@ -207,7 +211,7 @@ BarWidget {
       else root.hoverState = "closed"
     }
   }
-  function closeHoverCard() { openTimer.stop(); closeTimer.stop(); hoverPopup.open = false; root.hoverState = "closed" }
+  function closeHoverCard() { openTimer.stop(); closeTimer.stop(); hoverPopup.open = false; root.hoverState = "closed"; root.hoverView = "month" }
 
   Timer { id: openTimer; interval: 250; onTriggered: if (root.hoverWanted) { hoverPopup.open = true; root.hoverState = "open" } }
   Timer { id: closeTimer; interval: 300; onTriggered: if (!root.hoverWanted) root.closeHoverCard() }
@@ -235,28 +239,37 @@ BarWidget {
     HoverCard {
       id: hoverCard
       doc: root.faceCard
+      account: root.faceAccount
+      view: root.hoverView
       faceState: root.faceState
       fallbackText: root.faceCard ? "" : root.faceTooltip
       host: root
       foreground: Color.popups.text
       fontFamily: root.bar ? root.bar.fontFamily : Style.font.family
-      onOpenRequested: root.openMonarch()
+      onOpenRequested: root.openMonzo()
+      onViewRequested: function(v) { root.hoverView = v === "account" && root.faceAccount ? "account" : "month" }
     }
   }
 
-  //   omarchy-shell io.github.nathankramm.pupa status | jq
-  //   omarchy-shell io.github.nathankramm.pupa refresh
-  //   omarchy-shell io.github.nathankramm.pupa open                      # what a click does
-  //   omarchy-shell io.github.nathankramm.pupa hovercard open|close      # screenshot aid
-  //   omarchy-shell io.github.nathankramm.pupa fixture '<command>'       # session only; `off` restores
+  //   omarchy-shell io.github.silentjay.moth status | jq
+  //   omarchy-shell io.github.silentjay.moth refresh
+  //   omarchy-shell io.github.silentjay.moth open                      # what a click does
+  //   omarchy-shell io.github.silentjay.moth hovercard open|close      # screenshot aid
+  //   omarchy-shell io.github.silentjay.moth fixture '<command>'       # session only; `off` restores
   IpcHandler {
-    target: "io.github.nathankramm.pupa"
+    target: "io.github.silentjay.moth"
     function refresh(): void { root.broadcast("refresh") }
-    function open(): void { root.openMonarch() }
+    function open(): void { root.openMonzo() }
     function status(): string { return root.statusJson() }
     function hovercard(on: string): void {
       if (on === "open") { hoverPopup.open = true; root.hoverState = "forced" }
       else root.closeHoverCard()
+    }
+    // The same, opened on the account view: screenshots and tests only.
+    function hovercardview(view: string): void {
+      root.hoverView = view === "account" && root.faceAccount ? "account" : "month"
+      hoverPopup.open = true
+      root.hoverState = "forced"
     }
     function fixture(command: string): void { root.fixtureExec = (command === "off" || command === "") ? "" : command }
   }
@@ -281,6 +294,7 @@ BarWidget {
       hover_mode: root.faceHover,
       hover_state: root.hoverState,
       hover_open: hoverPopup.open,
+      hover_view: root.hoverView,
       open_hovered: hoverCard.openHovered,
       card: c ? {
         hero: !!c.hero,
@@ -290,6 +304,12 @@ BarWidget {
         groups: c.groups ? c.groups.length : 0,
         banner: c.banner_text !== "",
         unmapped: c.unmapped ? c.unmapped.length : 0
+      } : null,
+      account: root.faceAccount ? {
+        balances: root.faceAccount.balances ? root.faceAccount.balances.length : 0,
+        pots: root.faceAccount.pots ? root.faceAccount.pots.length : 0,
+        days: root.faceAccount.days ? root.faceAccount.days.length : 0,
+        rows: root.faceAccount.days ? root.faceAccount.days.reduce(function (n, d) { return n + d.rows.length }, 0) : 0
       } : null,
       card_width: hoverPopup.contentWidth,
       card_height: hoverPopup.contentHeight,
@@ -315,7 +335,7 @@ BarWidget {
 
     onPressed: function(b) {
       if (b === Qt.MiddleButton) root.refresh()
-      else if (b === Qt.LeftButton) root.openMonarch()
+      else if (b === Qt.LeftButton) root.openMonzo()
     }
   }
 }
