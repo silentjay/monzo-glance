@@ -13,7 +13,7 @@ import qs.Ui
 //   grey    the data is more than about three hours old
 //   a broken-link glyph   the feed is broken (signed out, no data, engine silent)
 //
-// Hover opens the card (HoverCard.qml); a click opens or focuses the Monzo web app; a middle
+// Hover opens the card (HoverCard.qml); a click opens Monzo in the default browser; a middle
 // click asks the engine to fetch now.
 //
 // THE PAINTER RULE: the engine formats, the painter paints. This file and HoverCard.qml compute
@@ -186,8 +186,7 @@ BarWidget {
     return root.baseFg
   }
 
-  // ---- click: the Monzo web app when it is installed (opened or focused by Omarchy's own
-  //      helper), else Monzo in the default browser. bin/monzo-glance-open decides.
+  // ---- click: Monzo in the default browser. bin/monzo-glance-open decides.
   readonly property string openCommand: {
     var path = String(Qt.resolvedUrl("bin/monzo-glance-open")).replace(/^file:\/\//, "")
     return "'" + path.replace(/'/g, "'\\''") + "'"

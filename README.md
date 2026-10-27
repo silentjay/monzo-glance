@@ -26,8 +26,7 @@ Monzo's own developer API — no aggregator, no server to run — and shows poun
 - **On hover:** this month so far, the pace line (`▼ £138 under a usual day 12`), where the month
   is heading, a chart against your usual month, the three spending groups furthest from usual,
   every group with its own figure, and how fresh the data is.
-- **On click:** Monzo opens in your browser (or the Monzo web app, if installed). Middle click
-  fetches fresh data now.
+- **On click:** Monzo opens in your default browser. Middle click fetches fresh data now.
 
 The card has two pages. **Month** is the spending picture above. **Account** is the account
 itself: balance, spent today, the balance with pots, every pot, and the **last seven days** of

@@ -22,8 +22,8 @@ Gestures, each judged from the widget's own IPC status sampled about eight times
   6 click "Open Monzo"         [--click] the card closes and a Monzo window exists
   7 click the pound sign          [--click] Monzo is focused (or opened); no second window
 
-Gestures 6 and 7 count a window whose class or title names Monzo: the web app
-(install-webapp.sh) or, without it, the browser tab that the fallback opens.
+Gestures 6 and 7 count a window whose class or title names Monzo: the browser
+window or tab that xdg-open opens.
 """
 import json
 import os

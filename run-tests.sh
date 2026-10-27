@@ -8,7 +8,7 @@
 #   T9    the model against an independent oracle, hand-pinned cases, and its mutants
 #   T10   the bar tick end to end (face states, fetch gates, files, log, config), and its mutants
 #   demo  the invented household renders, in pounds, for every scene (tools/demo.py --check)
-#   open  the two ways "Open Monzo" can go, and install-webapp.sh, with recorders on PATH
+#   open  the click path, with xdg-open replaced by a recorder on PATH
 # The gesture test is separate (tools/gesture_test.py): it needs a running Omarchy shell.
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

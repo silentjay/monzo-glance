@@ -12,6 +12,8 @@ All notable changes to Monzo Glance (a UK/GBP fork of Pupa) are recorded here. V
 - The engine is now self-contained: `Monzo-API` 1.3.6 (MIT, pure standard library) is vendored in
   `engine/monzo/`, so there is no venv, no `uv`, and no install step. `omarchy plugin add` gives a
   working widget; `install.sh` only symlinks the CLI onto your `PATH`.
+- Clicking the £ always opens Monzo in the default browser. The optional web-app installer and
+  its click path were removed.
 
 ### Added
 - **The Account view**, a second page in the same hover card: the current account's balance,

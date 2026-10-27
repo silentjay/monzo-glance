@@ -1,42 +1,15 @@
 #!/usr/bin/env bash
 # monzo-glance-open: open Monzo, the way the bar click and the card's "Open Monzo" button do.
 #
-#   1. The Omarchy web app, when it is installed (install-webapp.sh creates it): the launcher
-#      ~/.local/share/applications/Monzo.desktop. Its URL is READ from that file, so editing
-#      the launcher is enough. The work is done by Omarchy's own helper,
-#      omarchy-launch-or-focus-webapp <window-pattern> <url>, which focuses the web app's window
-#      when it is already open and launches it otherwise.
-#   2. Otherwise Monzo in the default browser (xdg-open).
+# One path: Monzo in the default browser. There is no bundled app and no web-app installer.
 #
-# The window pattern is the web app window's CLASS, not the word "Monzo": the helper also
-# matches TITLES, and a terminal, an editor tab or a browser page with "Monzo" in its title
-# would be focused instead. A Chromium --app window's class is
-# <browser>-<host>__<path>-<profile>, so "<host>__" names this app only.
-#
-#   monzo-glance-open --print    say which way it would go, and open nothing:
-#                        "webapp <pattern> <url>" or "browser <url>"
+#   monzo-glance-open --print    say what it would do, and open nothing:
+#                                "browser <url>"
 set -euo pipefail
-URL_DEFAULT="https://web.monzo.com"
-DESKTOP="${MONZO_GLANCE_DESKTOP:-$HOME/.local/share/applications/Monzo.desktop}"
+URL="https://web.monzo.com"
 
-url=""
-if [[ -r $DESKTOP ]]; then
-  url=$(sed -n 's/^Exec=omarchy-launch-webapp[[:space:]]\{1,\}"\{0,1\}\(https\{0,1\}:\/\/[^" ]*\)"\{0,1\}.*$/\1/p' "$DESKTOP" | head -n1)
-fi
-
-if [[ -n $url ]] && command -v omarchy-launch-or-focus-webapp >/dev/null 2>&1; then
-  host=${url#*://}
-  host=${host%%/*}
-  if [[ ${1:-} == "--print" ]]; then
-    printf 'webapp %s %s\n' "${host}__" "$url"
-    exit 0
-  fi
-  exec omarchy-launch-or-focus-webapp "${host}__" "$url"
-fi
-
-# No web app (or no Omarchy helper): the default browser.
 if [[ ${1:-} == "--print" ]]; then
-  printf 'browser %s\n' "$URL_DEFAULT"
+  printf 'browser %s\n' "$URL"
   exit 0
 fi
-exec xdg-open "$URL_DEFAULT"
+exec xdg-open "$URL"
