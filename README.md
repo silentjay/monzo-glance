@@ -17,7 +17,7 @@ Monzo's own developer API — no aggregator, no server to run — and shows poun
 > **Your tokens stay in your local keyring.** They are never written to a file, a log, the
 > clipboard, or anything that leaves your machine.
 
-![Monzo Glance's hover card: the month so far, the pace against your usual month, and every spending group](preview.png)
+![Monzo Glance's hover card: the month so far, the pace against your usual month, and every spending group](docs/monzo-glance-month.png)
 
 ## What you get
 
